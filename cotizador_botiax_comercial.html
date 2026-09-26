@@ -1,0 +1,3137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cotizador Comercial - Botiax IA</title>
+  <link rel="shortcut icon" href="favicon-botiax.ico" type="image/x-icon" />
+  <script src="https://cdn.tailwindcss.com" defer></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    input[type=range]::-webkit-slider-thumb { background: #E58B00; }
+    .disabled-card { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
+    
+    .card-item-selected {
+      border-color: #4ade80 !important;
+      box-shadow: 0 0 0 1px #4ade80 !important;
+    }
+    
+
+    .number-stepper { position: relative; display: flex; align-items: stretch; }
+    .number-stepper > input { flex: 1; min-width: 0; padding-right: 2.4rem !important; }
+    .number-stepper-controls { z-index: 20; position: absolute; right: 0; top: 0; bottom: 0; width: 2.1rem; display: flex; flex-direction: column; border-left: 1px solid #1e293b; overflow: hidden; border-radius: 0 .5rem .5rem 0; }
+    .number-stepper-controls button { flex: 1; min-height: 18px; touch-action: manipulation; padding: 0; border: 0; background: #0f172a; color: #94a3b8; font-size: 10px; line-height: 1; cursor: pointer; }
+    .number-stepper-controls button:first-child { border-bottom: 1px solid #1e293b; }
+    .number-stepper-controls button:hover { background: #1e293b; color: #f59e0b; }
+    .number-stepper.disabled-stepper { opacity: .4; filter: grayscale(1); }
+    @media (max-width: 640px) {
+      header > div { gap: .35rem !important; }
+      header img { max-width: 90px; }
+      #header-plan-select { max-width: 112px; font-size: 10px; padding-left: .4rem; padding-right: .4rem; }
+      #btn-reset, #btn-clear { padding-left: .5rem; padding-right: .5rem; font-size: 10px; }
+      #header-monthly-price, #header-setup-price { font-size: 10px; }
+      .number-stepper { width: 100%; min-height: 34px; }
+      .number-stepper-controls { display: flex !important; visibility: visible !important; opacity: 1 !important; width: 2.2rem; }
+      .number-stepper-controls button { display: flex !important; visibility: visible !important; align-items: center; justify-content: center; min-height: 16px; }
+      .number-stepper > input { min-height: 34px; }
+    }
+
+    @media print {
+      body { background: #ffffff !important; color: #0f172a !important; }
+      body * { visibility: hidden !important; }
+      .print-active, .print-active * { visibility: visible !important; }
+      
+      /* Propuesta comercial para cliente */
+      #client-modal.print-active-modal {
+        position: static !important;
+        display: block !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+      }
+      #client-modal.print-active-modal > div {
+        max-width: 100% !important;
+        box-shadow: none !important;
+        border: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      #client-modal .print-active { 
+        position: relative !important; 
+        width: 100% !important; 
+        background: #ffffff !important;
+        color: #0f172a !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
+      /* Alta de Cliente para PDF */
+      #onboarding-pdf-modal.print-active-modal {
+        position: static !important;
+        display: block !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+      }
+      #onboarding-pdf-modal.print-active-modal > div {
+        max-width: 100% !important;
+        box-shadow: none !important;
+        border: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      #onboarding-pdf-modal .print-active {
+        position: relative !important;
+        width: 100% !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      /* Desglose Financiero Interno */
+      #tech-modal.print-active-modal {
+        position: static !important;
+        display: block !important;
+        background: #020617 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+      }
+      #tech-modal.print-active-modal > div {
+        max-width: 100% !important;
+        box-shadow: none !important;
+        border: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #0f172a !important;
+        color: #f8fafc !important;
+      }
+      #tech-modal .print-active {
+        position: relative !important;
+        width: 100% !important;
+        background: #0f172a !important;
+        color: #f8fafc !important;
+        padding: 1.5cm !important;
+        margin: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      @page { margin: 1cm; size: auto; }
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-amber-500 selection:text-slate-950">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-30 print:hidden">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
+      <div class="flex items-center space-x-3">
+        <img src="botiaxlogonaranja.png" alt="Botiax" class="h-10 w-auto" onerror="this.src='https://via.placeholder.com/160x45/0f172a/E58B00?text=BOTIAX+IA'">
+        <span class="text-xs font-semibold px-2.5 py-1 bg-amber-500/10 text-amber-500 rounded-full border border-amber-500/20">Cotizador Oficial</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <label class="text-[10px] text-slate-500 hidden sm:block">Plan</label>
+        <select id="header-plan-select" onchange="applyPlan(this.value)" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-200 focus:outline-none focus:border-amber-500">
+          <option value="custom">Personalizado</option>
+          <option value="base">Base</option>
+          <option value="starter">Starter</option>
+          <option value="grow">Grow</option>
+          <option value="pro">Pro</option>
+          <option value="corporate">Corporate</option>
+        </select>
+        <div class="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800">
+          <div class="text-[10px] leading-tight"><span class="text-slate-500 block">Mensual</span><span id="header-monthly-price" class="font-bold text-amber-400">USD 0</span></div>
+          <div class="w-px h-6 bg-slate-800"></div>
+          <div class="text-[10px] leading-tight"><span class="text-slate-500 block">Setup</span><span id="header-setup-price" class="font-bold text-amber-400">USD 0</span></div>
+        </div>
+        <button id="btn-reset" onclick="resetCalculator()" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all border border-red-500/20 flex items-center gap-1">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        Reiniciar
+        </button>
+        <button id="btn-clear" onclick="clearCalculator()" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700/50 text-slate-300 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/40 transition-all border border-slate-700 flex items-center gap-1">
+          Limpiar
+        </button>
+    </div>
+  </header>
+
+  <!-- Section 1: Visual Plan Selector Card Banner -->
+  <section class="max-w-7xl mx-auto px-4 pt-6 pb-2 w-full print:hidden">
+    <div class="mb-3">
+      <h2 class="text-xs font-bold text-amber-500 uppercase tracking-wider">Selección de Planes Oficiales</h2>
+      <p class="text-xs text-slate-400">Seleccioná un plan base o creá una configuración a medida.</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3" id="plan-cards-container">
+      <div id="card-plan-base" onclick="applyPlan('base')" class="cursor-pointer bg-slate-900 border border-slate-800 hover:border-amber-500/50 rounded-xl p-3 flex flex-col justify-between transition-all">
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Básico</span>
+          <h3 class="text-sm font-bold text-white">Plan Base</h3>
+          <p class="text-[11px] text-slate-400 mt-1">Sin IA, 2 Lic, 1 canal standard a elección, 200 conv., 2 Auto</p>
+        </div>
+        <div class="mt-4 pt-2 border-t border-slate-800/80">
+          <span class="text-[10px] text-slate-500 block">Estimado desde</span>
+          <span id="card-price-base" class="text-base font-extrabold text-amber-500">USD 59</span>
+        </div>
+      </div>
+
+      <div id="card-plan-starter" onclick="applyPlan('starter')" class="cursor-pointer bg-slate-900 border border-slate-800 hover:border-amber-500/50 rounded-xl p-3 flex flex-col justify-between transition-all">
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Inicia tu IA</span>
+          <h3 class="text-sm font-bold text-white">Starter</h3>
+          <p class="text-[11px] text-slate-400 mt-1">IA Starter, 2 Lic, 1 canal standard a elección, 200 conv.</p>
+        </div>
+        <div class="mt-4 pt-2 border-t border-slate-800/80">
+          <span class="text-[10px] text-slate-500 block">Estimado desde</span>
+          <span id="card-price-starter" class="text-base font-extrabold text-amber-500">USD 99</span>
+        </div>
+      </div>
+
+      <div id="card-plan-grow" onclick="applyPlan('grow')" class="cursor-pointer bg-slate-900 border border-slate-800 hover:border-amber-500/50 rounded-xl p-3 flex flex-col justify-between transition-all">
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Crecimiento</span>
+          <h3 class="text-sm font-bold text-white">Grow</h3>
+          <p class="text-[11px] text-slate-400 mt-1">IA Grow, 5 Lic, 3 canales standard a elección, 500 conv.</p>
+        </div>
+        <div class="mt-4 pt-2 border-t border-slate-800/80">
+          <span class="text-[10px] text-slate-500 block">Estimado desde</span>
+          <span id="card-price-grow" class="text-base font-extrabold text-amber-500">USD 199</span>
+        </div>
+      </div>
+
+      <div id="card-plan-pro" onclick="applyPlan('pro')" class="cursor-pointer bg-slate-900 border border-slate-800 hover:border-amber-500/50 rounded-xl p-3 flex flex-col justify-between transition-all">
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Avanzado</span>
+          <h3 class="text-sm font-bold text-white">Pro</h3>
+          <p class="text-[11px] text-slate-400 mt-1">IA Pro, 8 Lic, 3 canales standard + 1 WPP, 500 + 500 conv.</p>
+        </div>
+        <div class="mt-4 pt-2 border-t border-slate-800/80">
+          <span class="text-[10px] text-slate-500 block">Estimado desde</span>
+          <span id="card-price-pro" class="text-base font-extrabold text-amber-500">USD 299</span>
+        </div>
+      </div>
+
+      <div id="card-plan-corporate" onclick="applyPlan('corporate')" class="cursor-pointer bg-slate-900 border border-slate-800 hover:border-amber-500/50 rounded-xl p-3 flex flex-col justify-between transition-all">
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Corporativo</span>
+          <h3 class="text-sm font-bold text-white">Corporate</h3>
+          <p class="text-[11px] text-slate-400 mt-1">IA Corporate, 12 Lic, 3 canales standard + 1 WPP, 1000 + 1000 conv.</p>
+        </div>
+        <div class="mt-4 pt-2 border-t border-slate-800/80">
+          <span class="text-[10px] text-slate-500 block">Estimado desde</span>
+          <span id="card-price-corporate" class="text-base font-extrabold text-amber-500">USD 399</span>
+        </div>
+      </div>
+
+      <!-- Tarjeta Plan Personalizado -->
+      <div id="card-plan-custom" onclick="applyPlan('custom')" class="cursor-pointer bg-slate-900 border border-slate-800 hover:border-amber-500/50 rounded-xl p-3 flex flex-col justify-between transition-all">
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-amber-400">A Medida</span>
+          <h3 class="text-sm font-bold text-white">Personalizado</h3>
+          <p class="text-[11px] text-slate-400 mt-1">Configuración manual de módulos y servicios</p>
+        </div>
+        <div class="mt-4 pt-2 border-t border-slate-800/80">
+          <span class="text-[10px] text-slate-500 block">Cotización</span>
+          <span class="text-base font-extrabold text-amber-500">A Medida</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content Grid -->
+  <main class="max-w-7xl mx-auto px-4 py-4 grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow w-full print:hidden">
+
+    <!-- Left Column: Inputs Form -->
+    <div class="lg:col-span-8 space-y-5">
+
+      <!-- Datos del Cliente y Asesor -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-sm space-y-4">
+        <h2 class="text-xs font-bold text-amber-500 uppercase tracking-wider flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+          Información de Partes
+        </h2>
+        
+        <div class="space-y-2">
+          <span class="text-[11px] font-semibold text-slate-300 block border-b border-slate-800 pb-1">Datos del Cliente</span>
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-1">Nombre de Empresa</label>
+              <input type="text" id="client-company" oninput="recalculate()" placeholder="Empresa S.A." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-1">Persona Responsable</label>
+              <input type="text" id="client-contact" oninput="recalculate()" placeholder="Juan Pérez" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-1">Correo Electrónico</label>
+              <input type="email" id="client-email" oninput="recalculate()" placeholder="contacto@cliente.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-1">Teléfono Contacto</label>
+              <input type="text" id="client-phone" oninput="recalculate()" placeholder="+54 9 11..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-2 pt-2">
+          <span class="text-[11px] font-semibold text-slate-300 block border-b border-slate-800 pb-1">Ejecutivo Comercial Botiax</span>
+          <div class="grid grid-cols-1 sm:grid-cols-6 gap-3">
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-1">Comercial</label>
+              <select id="seller-preset" onchange="onSellerPresetChange()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+                <option value="new">Nuevo comercial / cargar manualmente</option>
+                <option value="valeria" selected>Valeria Espinosa</option>
+                <option value="adriana">Adriana Vazquez</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-1">Nombre del Comercial</label>
+              <input type="text" id="seller-name" oninput="recalculate()" placeholder="Nombre y Apellido" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-1">Correo del Comercial</label>
+              <input type="email" id="seller-email" oninput="recalculate()" placeholder="comercial@empresa.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-1">Teléfono Comercial</label>
+              <input type="text" id="seller-phone" oninput="recalculate()" placeholder="+54 9 ..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-1">Mercado Destino</label>
+              <select id="market-select" onchange="recalculate()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+                <option value="Argentina">Argentina</option>
+                <option value="Colombia">Colombia</option>
+                <option value="Estados Unidos">Estados Unidos</option>
+                <option value="Brasil">Brasil</option>
+                <option value="México">México</option>
+                <option value="Resto de Latinoamérica">Resto de Latinoamérica</option>
+                <option value="Chile">Chile</option>
+                <option value="España">España</option>
+                <option value="Perú">Perú</option>
+                <option value="Otros">Otros</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-1">Validez de Cotización (Días)</label>
+              <input type="number" id="quote-validity-days" min="1" value="7" oninput="recalculate()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 1. Motor IA y Licencias -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-sm">
+        <h2 class="text-xs font-bold text-amber-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+          1. Asistente IA & Licencias
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div id="box-ia-level" class="p-1 rounded-xl transition-all border border-transparent">
+            <label class="block text-xs text-slate-400 mb-1">Nivel de Asistente IA</label>
+            <select id="ia-level" onchange="onIaLevelChange()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+              <option value="none">Sin Asistente Virtual IA ($0 USD/mes)</option>
+              <option value="starter">IA STARTER ($30 USD/mes) - Setup $60 - 5 Días Hb.</option>
+              <option value="grow">IA GROW ($60 USD/mes) - Setup $120 - 7 Días Hb.</option>
+              <option value="pro">IA PRO ($100 USD/mes) - Setup $200 - 10 Días Hb.</option>
+              <option value="corporate">IA CORPORATE ($150 USD/mes) - Setup $300 - 15 Días Hb.</option>
+            </select>
+          </div>
+          <div id="box-qty-licencias" class="p-1 rounded-xl transition-all border border-transparent">
+            <label class="block text-xs text-slate-400 mb-1">Licencias de Agente / Usuario ($15 USD c/u)</label>
+            <input type="number" id="qty-licencias" min="1" value="1" oninput="validateAndRecalculate()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Canales & Conversaciones -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-sm space-y-4">
+        <div>
+          <h2 class="text-xs font-bold text-amber-500 uppercase tracking-wider flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+            2. Canales y Conversaciones
+          </h2>
+          <p class="text-[10px] text-slate-500 mt-1">Los canales estándar comparten una única bolsa de conversaciones. WhatsApp se administra por separado.</p>
+        </div>
+
+        <!-- Canales estándar -->
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-xs font-semibold text-slate-200">Canales estándar</span>
+              <p class="text-[10px] text-slate-500">$25 USD/mes por canal</p>
+            </div>
+            <span id="std-channel-count-badge" class="text-[10px] font-mono bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded border border-amber-500/20">0 canales</span>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            <div id="box-chan-webchat" class="bg-slate-900 border border-slate-800 rounded-xl p-2.5 transition-all">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-200">Web Chat</span>
+                <span class="text-[10px] text-slate-500">$25</span>
+              </div>
+              <label class="block text-[10px] text-slate-400 mt-2 mb-1">Cantidad</label>
+              <input type="number" id="qty-chan-webchat" min="0" value="0" oninput="onStandardChannelQtyChange()" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+            </div>
+
+            <div id="box-chan-ig" class="bg-slate-900 border border-slate-800 rounded-xl p-2.5 transition-all">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-200">Instagram</span>
+                <span class="text-[10px] text-slate-500">$25</span>
+              </div>
+              <label class="block text-[10px] text-slate-400 mt-2 mb-1">Cantidad</label>
+              <input type="number" id="qty-chan-ig" min="0" value="0" oninput="onStandardChannelQtyChange()" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+            </div>
+
+            <div id="box-chan-fb" class="bg-slate-900 border border-slate-800 rounded-xl p-2.5 transition-all">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-200">Facebook</span>
+                <span class="text-[10px] text-slate-500">$25</span>
+              </div>
+              <label class="block text-[10px] text-slate-400 mt-2 mb-1">Cantidad</label>
+              <input type="number" id="qty-chan-fb" min="0" value="0" oninput="onStandardChannelQtyChange()" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+            </div>
+
+            <div id="box-chan-email" class="bg-slate-900 border border-slate-800 rounded-xl p-2.5 transition-all">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-200">Correo electrónico</span>
+                <span class="text-[10px] text-slate-500">$25</span>
+              </div>
+              <label class="block text-[10px] text-slate-400 mt-2 mb-1">Cantidad</label>
+              <input type="number" id="qty-chan-email" min="0" value="0" oninput="onStandardChannelQtyChange()" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+            </div>
+
+            <div id="box-chan-api" class="bg-slate-900 border border-slate-800 rounded-xl p-2.5 transition-all">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-200">Mensajería API</span>
+                <span class="text-[10px] text-slate-500">$25</span>
+              </div>
+              <label class="block text-[10px] text-slate-400 mt-2 mb-1">Cantidad</label>
+              <input type="number" id="qty-chan-api" min="0" value="0" oninput="onStandardChannelQtyChange()" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+            </div>
+          </div>
+
+          <div class="border-t border-slate-800 pt-3">
+            <div class="flex justify-between items-center text-[10px] text-slate-400 mb-1">
+              <label>Conversaciones Mensuales Estándar (bolsa compartida)</label>
+              <span id="slider-val-std" onclick="openEditModal('std', 'Conversaciones Estándar')" class="font-bold text-amber-500 font-mono cursor-pointer hover:underline bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">0 ✏️</span>
+            </div>
+            <input type="range" id="qty-tkt-std" min="0" max="5000" value="0" step="10" oninput="onSliderRangeInput('std', this.value)" class="w-full accent-amber-500 cursor-pointer h-1.5 bg-slate-900 rounded-lg">
+            <p class="text-[10px] text-slate-500 mt-1">El volumen se distribuye entre todos los canales estándar seleccionados.</p>
+          </div>
+        </div>
+
+        <!-- WhatsApp -->
+        <div id="box-chan-wpp" class="bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-3 transition-all">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-xs font-semibold text-slate-200">WhatsApp API</span>
+              <p class="text-[10px] text-slate-500">$25 USD/mes por línea/canal</p>
+            </div>
+            <span id="wpp-channel-count-badge" class="text-[10px] font-mono bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded border border-amber-500/20">0 líneas</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-1">Cantidad de líneas WhatsApp</label>
+              <input type="number" id="qty-chan-wpp" min="0" value="0" oninput="onWppChannelQtyChange()" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center text-[10px] text-slate-400 mb-1">
+                <label>Conversaciones Mensuales WhatsApp</label>
+                <span id="slider-val-wpp" onclick="openEditModal('wpp', 'Conversaciones WhatsApp')" class="font-bold text-amber-500 font-mono cursor-pointer hover:underline bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">0 ✏️</span>
+              </div>
+              <input type="range" id="qty-tkt-wpp" min="0" max="5000" value="0" step="10" oninput="onSliderRangeInput('wpp', this.value)" class="w-full accent-amber-500 cursor-pointer h-1.5 bg-slate-900 rounded-lg">
+              <p id="wpp-rate-help" class="text-[10px] text-slate-500 mt-1">El precio depende del mercado y del nivel de IA.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. WhatsApp Marketing y Plantillas -->
+      <div id="wpp-marketing-card" class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-sm space-y-3 transition-all disabled-card">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xs font-bold text-amber-500 uppercase tracking-wider flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
+            3. Campañas WhatsApp & Plantillas Adicionales
+          </h2>
+          <span id="wpp-lock-msg" class="text-[10px] text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded">Requiere Canal WhatsApp Activo</span>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div id="box-wpp-mkt-module" class="space-y-2 p-2 rounded-xl border border-transparent transition-all">
+            <label class="inline-flex items-center space-x-2 cursor-pointer">
+              <input type="checkbox" id="chk-wpp-mkt" onchange="validateAndRecalculate()" class="rounded bg-slate-950 border-slate-700 text-amber-500 focus:ring-0">
+              <span class="text-xs font-medium text-slate-200">Módulo WSP MKT ($15 USD)</span>
+            </label>
+            <p class="text-[10px] text-slate-500">Incluye 100 envíos iniciales</p>
+            
+            <div class="space-y-1">
+              <div class="flex justify-between items-center text-[10px] text-slate-400">
+                <label>Total Envíos Salientes Mkt</label>
+                <span id="slider-val-wpp-mkt" onclick="openEditModal('wpp_mkt', 'WhatsApp Marketing')" class="font-bold text-amber-500 font-mono cursor-pointer hover:underline bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">0 ✏️</span>
+              </div>
+              <input type="range" id="qty-wpp-mkt-sends" min="0" max="1000" value="0" step="10" oninput="onWppMktInput(this.value)" class="w-full accent-amber-500 cursor-pointer h-1.5 bg-slate-950 rounded-lg">
+            </div>
+          </div>
+
+          <div id="box-plantillas-mkt" class="p-1 rounded-xl transition-all border border-transparent">
+            <label class="block text-xs text-slate-400 mb-1">Plantillas Mkt Adicionales (<span id="plantilla-mkt-rate-label">$0.0989</span> c/u)</label>
+            <input type="number" id="qty-plantillas-mkt" min="0" value="0" oninput="recalculate()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500 transition-all">
+          </div>
+
+          <div id="box-plantillas-ut" class="p-1 rounded-xl transition-all border border-transparent">
+            <label class="block text-xs text-slate-400 mb-1">Plantillas Utility Adicionales (<span id="plantilla-ut-rate-label">$0.0544</span> c/u)</label>
+            <input type="number" id="qty-plantillas-ut" min="0" value="0" oninput="recalculate()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500 transition-all">
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Automatizaciones e Integraciones -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-sm space-y-3">
+        <h2 class="text-xs font-bold text-amber-500 uppercase tracking-wider flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4a2 2 0 114 0v1a2 2 0 01-2 2 2 2 0 01-2-2V4zM4 7a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7z"></path></svg>
+          4. Automatizaciones e Integraciones
+        </h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div id="box-qty-auto" class="p-1 rounded-xl transition-all border border-transparent">
+            <label class="block text-xs text-slate-400 mb-1">Automatizaciones ($5 USD/mes c/u)</label>
+            <input type="number" id="qty-auto" min="0" value="0" oninput="validateAndRecalculate()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500 transition-all">
+          </div>
+
+          <div id="box-int-email" class="integrations-container p-1 rounded-xl transition-all border border-transparent">
+            <label class="block text-xs text-slate-400 mb-1">Envío Correo desde Asistente IA ($15 USD/mes c/u)</label>
+            <input type="number" id="qty-int-email" min="0" value="0" oninput="onIntegrationChange()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500 transition-all">
+          </div>
+
+          <div id="box-int-sheets" class="integrations-container p-1 rounded-xl transition-all border border-transparent">
+            <label class="block text-xs text-slate-400 mb-1">Integración Sheet / Excel Online ($25 USD/mes c/u)</label>
+            <input type="number" id="qty-int-sheets" min="0" value="0" oninput="onIntegrationChange()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500 transition-all">
+            <div id="box-sheet-tools" class="mt-2 hidden space-y-2"></div>
+          </div>
+
+          <div id="box-int-calendar" class="integrations-container p-1 rounded-xl transition-all border border-transparent">
+            <label class="block text-xs text-slate-400 mb-1">Integración de Turnero con Google Calendar ($25 USD/mes c/u)</label>
+            <input type="number" id="qty-int-calendar" min="0" value="0" oninput="onIntegrationChange()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500 transition-all">
+          </div>
+
+          <div id="box-int-geo" class="integrations-container p-1 rounded-xl transition-all border border-transparent">
+            <label class="block text-xs text-slate-400 mb-1">Tool de Geolocalización ($25 USD/mes c/u)</label>
+            <input type="number" id="qty-int-geo" min="0" value="0" oninput="onIntegrationChange()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500 transition-all">
+          </div>
+
+          <div id="box-int-custom" class="integrations-container sm:col-span-1 order-5 p-1 rounded-xl transition-all border border-transparent">
+            <label class="block text-xs text-slate-400 mb-1">Integraciones a Medida ($120 USD/mes c/u)</label>
+            <input type="number" id="qty-int-custom" min="0" value="0" oninput="onIntegrationChange()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500 transition-all">
+            <div id="box-int-custom-details" class="mt-2 hidden space-y-2"></div>
+          </div>
+
+          <div id="box-tn-cat" class="integrations-container sm:col-span-1 order-3 bg-slate-950 border border-slate-800 p-3 rounded-xl transition-all">
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-xs font-medium text-slate-300">Tienda Nube Catálogo (Escala por productos)</label>
+              <span id="tn-cat-price-label" class="text-xs text-amber-500 font-bold">$0.00 USD/mes</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <input type="number" id="qty-tn-prods" min="0" value="0" oninput="onIntegrationChange()" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none">
+              </div>
+              <p class="text-[10px] text-slate-500 flex items-center">
+                * Mín. 15 prods = $30 | 16-30 = $1.83/u | 31-50 = $1.60/u | 51-80 = $1.25/u | >80 = $1.00/u
+              </p>
+            </div>
+          </div>
+
+          <div id="box-tn-posventa" class="integrations-container order-4 p-1 rounded-xl transition-all border border-transparent">
+            <label class="block text-xs text-slate-400 mb-1">Tienda Nube Posventa ($25 USD/mes)</label>
+            <select id="sel-tn-posventa" onchange="onIntegrationChange()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500 transition-all">
+              <option value="0">No incluir</option>
+              <option value="1">Sí ($25 USD/mes)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. Setup & Servicios -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-sm space-y-3">
+        <h2 class="text-xs font-bold text-amber-500 uppercase tracking-wider flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg>
+          5. Capacitaciones y Servicios Adicionales
+        </h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div id="box-cap-equipo" class="p-1 rounded-xl transition-all border border-transparent">
+            <label class="block text-xs text-slate-400 mb-1">Capacitación Equipo (Horas) - $25/hs</label>
+            <input type="number" id="qty-cap-equipo" min="0" value="0" oninput="validateAndRecalculate()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 transition-all">
+          </div>
+
+          <div id="box-cap-admin" class="p-1 rounded-xl transition-all border border-transparent">
+            <label class="block text-xs text-slate-400 mb-1">Capacitación Admin (Horas) - $25/hs</label>
+            <input type="number" id="qty-cap-admin" min="0" value="0" oninput="validateAndRecalculate()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 transition-all">
+          </div>
+          <div id="box-analisis-it" class="p-1 rounded-xl transition-all border border-transparent">
+            <label class="block text-xs text-slate-400 mb-1">Análisis de IT (Horas) - $60/hs</label>
+            <input type="number" id="qty-analisis-it" min="0" value="0" oninput="validateAndRecalculate()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 transition-all">
+            <p class="text-[10px] text-slate-500 mt-1">Servicio de una sola vez para analizar y desarrollar integraciones.</p>
+          </div>
+
+          <div id="box-config-inicial" class="hidden">
+            <label>
+              <input type="checkbox" id="chk-config-inicial" checked disabled>
+            </label>
+          </div>
+
+          <div id="box-seguimiento-hs" class="p-1 rounded-xl transition-all border border-transparent">
+            <label class="block text-xs text-slate-400 mb-1">Seguimiento Plataforma (Hs/mes)</label>
+            <select id="qty-seguimiento-hs" onchange="recalculate()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500 transition-all">
+              <option value="0">Sin seguimiento ($0 USD/mes)</option>
+              <option value="1">1 hora ($30 USD/mes)</option>
+              <option value="2">2 horas ($60 USD/mes)</option>
+              <option value="3">3 horas ($90 USD/mes)</option>
+              <option value="4">4 horas ($120 USD/mes)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. Notas de la Propuesta -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-sm space-y-3">
+        <h2 class="text-xs font-bold text-amber-500 uppercase tracking-wider">6. Notas de la Propuesta</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Nota comercial</label>
+            <textarea id="quote-note" rows="4" oninput="recalculate()" placeholder="Escribí una nota para el cliente..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500 resize-y"></textarea>
+            <p class="text-[10px] text-slate-500 mt-1">Aparece en la vista previa antes del precio y en el texto de WhatsApp.</p>
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Término y condición adicional</label>
+            <textarea id="quote-term-note" rows="4" oninput="recalculate()" placeholder="Escribí un término o condición adicional..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500 resize-y"></textarea>
+            <p class="text-[10px] text-slate-500 mt-1">Se agrega como un punto más en Términos y Condiciones.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7. Datos para el Alta -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-sm space-y-3">
+        <h2 class="text-xs font-bold text-amber-500 uppercase tracking-wider">7. Datos para el Alta</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Fecha de inicio estimada</label>
+            <input type="date" id="alta-start-date" oninput="recalculate()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Mail para facturación</label>
+            <input type="email" id="alta-billing-email" oninput="recalculate()" placeholder="facturacion@cliente.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Razón social</label>
+            <input type="text" id="alta-legal-name" oninput="recalculate()" placeholder="Razón social del cliente" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">CUIT / RUT</label>
+            <input type="text" id="alta-tax-id" oninput="recalculate()" placeholder="CUIT / RUT" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">País</label>
+            <input type="text" id="alta-country" oninput="recalculate()" placeholder="País de facturación" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Condición frente al IVA</label>
+            <select id="alta-iva-condition" onchange="recalculate()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+              <option value="">Seleccionar</option>
+              <option value="Responsable Inscripto">Responsable Inscripto</option>
+              <option value="Exento">Exento</option>
+              <option value="Monotributista">Monotributista</option>
+              <option value="Consumidor Final">Consumidor Final</option>
+              <option value="No Responsable">No Responsable</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Moneda de cobro</label>
+            <select id="alta-currency" onchange="recalculate()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+              <option value="USD">USD</option>
+              <option value="ARS">ARS</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Nombre del Partner</label>
+            <input type="text" id="alta-partner-name" oninput="recalculate()" placeholder="Nombre del partner" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Correo del Partner</label>
+            <input type="email" id="alta-partner-email" oninput="recalculate()" placeholder="partner@email.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Responsable de Implementación</label>
+            <input type="text" id="alta-implementation-name" oninput="recalculate()" placeholder="Nombre y Apellido" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Correo del Responsable</label>
+            <input type="email" id="alta-implementation-email" oninput="recalculate()" placeholder="implementacion@empresa.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+          </div>
+          <div class="sm:col-span-2 flex items-center gap-2 p-2 rounded-xl border border-slate-800 bg-slate-950/70">
+            <input type="checkbox" id="alta-setup-paid" onchange="recalculate()" class="rounded bg-slate-950 border-slate-700 text-amber-500 focus:ring-0">
+            <label for="alta-setup-paid" class="text-xs text-slate-300 font-medium">Ya pagó setup</label>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-xs text-slate-400 mb-1">Comentarios generales</label>
+            <textarea id="alta-general-comments" rows="3" oninput="recalculate()" placeholder="Comentarios o información adicional para el alta..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500 resize-y"></textarea>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Column: Quote Summary & Controls -->
+    <div class="lg:col-span-4 space-y-6">
+
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl sticky top-20 space-y-4">
+        
+        <div>
+          <h2 class="text-sm font-bold text-slate-100 flex items-center justify-between">
+            <span>Resumen de Cotización</span>
+            <span id="impl-time-badge" class="text-[11px] font-normal bg-slate-800 text-amber-400 px-2 py-0.5 rounded-full">1 Día Hábil</span>
+          </h2>
+          <!-- Nombre del Plan Seleccionado -->
+          <span id="summary-selected-plan" class="text-xs font-semibold text-amber-500 block mt-0.5">Plan Personalizado</span>
+        </div>
+
+        <div id="min-req-warning" class="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-xl text-xs space-y-1">
+          <p class="font-semibold flex items-center gap-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            Faltan datos obligatorios:
+          </p>
+          <ul class="list-disc list-inside text-[11px] space-y-0.5 text-red-300">
+            <li id="warn-lic">Al menos 1 Licencia</li>
+            <li id="warn-channel">Al menos 1 Canal con conversaciones (1+)</li>
+          </ul>
+        </div>
+
+        <!-- Sliders de Descuentos -->
+        <div id="pricing-results" class="space-y-3">
+
+          <div id="container-slider-discount-comm" class="space-y-1">
+            <div class="flex justify-between items-center text-xs">
+              <span class="text-slate-400">Descuento especial:</span>
+              <span id="commercial-discount-val" class="font-bold text-amber-500">0%</span>
+            </div>
+            <input type="range" id="slider-discount-comm" min="0" max="70" value="0" step="1" oninput="recalculate()" class="w-full accent-amber-500 cursor-pointer h-1.5 bg-slate-950 rounded-lg">
+          </div>
+
+          <div id="container-slider-bonif-setup" class="space-y-1">
+            <div class="flex justify-between items-center text-xs">
+              <span class="text-slate-400">Bonificación de Setup:</span>
+              <span id="setup-bonif-val" class="font-bold text-amber-500">0%</span>
+            </div>
+            <input type="range" id="slider-bonif-setup" min="0" max="100" value="0" step="1" oninput="recalculate()" class="w-full accent-amber-500 cursor-pointer h-1.5 bg-slate-950 rounded-lg">
+          </div>
+
+          <div id="container-slider-partner-commission" class="space-y-1">
+            <div class="flex justify-between items-center text-xs">
+              <span class="text-slate-400">Comisión Partner:</span>
+              <span id="partner-commission-val" class="font-bold text-amber-500">0%</span>
+            </div>
+            <input type="range" id="slider-partner-commission" min="0" max="30" value="0" step="1" oninput="this.dataset.userSet='1'; recalculate()" class="w-full accent-amber-500 cursor-pointer h-1.5 bg-slate-950 rounded-lg">
+          </div>
+
+          <hr class="border-slate-800">
+
+          <!-- Monthly Final Output -->
+          <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-1">
+            <span class="text-[11px] text-slate-400 uppercase tracking-wider block font-semibold">INVERSIÓN MENSUAL</span>
+            <div class="flex items-baseline gap-2">
+              <span id="display-monthly-final" class="text-2xl font-extrabold text-amber-500">$0.00 USD</span>
+              <span id="display-monthly-original" class="text-xs text-slate-500 line-through"></span>
+            </div>
+            <p id="display-monthly-discount-text" class="text-[10px] text-emerald-400 font-medium"></p>
+          </div>
+
+          <!-- Setup Output -->
+          <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-1">
+            <span class="text-[11px] text-slate-400 uppercase tracking-wider block font-semibold">SETUP & INICIO (PAGO ÚNICO)</span>
+            <div class="flex items-baseline gap-2">
+              <span id="display-setup-final" class="text-xl font-bold text-slate-200">$0.00 USD</span>
+              <span id="display-setup-original" class="text-xs text-slate-500 line-through"></span>
+            </div>
+            <p id="display-setup-bonif-text" class="text-[10px] text-emerald-400 font-medium"></p>
+          </div>
+
+          <!-- Control de Margen Interno -->
+          <div id="margin-control-block" class="bg-slate-950 border border-slate-800 p-3 rounded-xl space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Control de Margen Interno</span>
+              <span id="margin-status-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">OK</span>
+            </div>
+            <div class="text-xs space-y-0.5 text-slate-300">
+              <div class="flex justify-between">
+                <span class="text-slate-500">Costo Mensual:</span>
+                <span id="margin-cost-val" class="font-mono text-slate-300">$0.00 USD</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Comisión Partner:</span>
+                <span id="margin-partner-val" class="font-mono text-amber-400">$0.00 USD (15%)</span>
+              </div>
+              <div class="flex justify-between border-t border-slate-800/80 pt-1">
+                <span class="text-slate-500">Margen Neto:</span>
+                <span id="current-margin-val" class="font-bold text-emerald-400 font-mono">$0.00 USD (0.0%)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quote Margin Guard -->
+          <div id="quote-margin-warning" class="hidden bg-red-500/10 border border-red-500/30 text-red-300 p-3 rounded-xl text-xs space-y-1.5">
+            <p class="font-bold uppercase tracking-wider text-red-400">COTIZACIÓN NO PERMITIDA</p>
+            <p class="font-semibold">Falta estructura para la cantidad de tickets.</p>
+            <p class="font-semibold">Aumentar licencias, canales, automatizaciones o integraciones.</p>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="space-y-2 pt-2">
+            <button id="btn-preview-prop" onclick="openClientProposalModal()" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2.5 px-4 rounded-xl transition-all text-xs uppercase tracking-wider flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+              Vista Previa Propuesta
+            </button>
+
+            <button id="btn-copy-wpp" onclick="copyQuickSummary()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium py-2 px-4 rounded-xl transition-all text-xs flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+              Copiar Texto WhatsApp
+            </button>
+
+            <button id="btn-download-alta" onclick="copyClientOnboarding()" class="w-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 font-medium py-2 px-4 rounded-xl transition-all text-xs flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v12m0 0l4-4m-4 4l-4-4M5 21h14a2 2 0 002-2v-2H3v2a2 2 0 002 2z"></path></svg>
+              Copiar Texto para Alta Cliente
+            </button>
+
+            <button id="btn-pdf-alta" onclick="openClientOnboardingPdfModal()" class="w-full bg-slate-950 hover:bg-slate-800 text-amber-500 border border-amber-500/30 font-medium py-2 px-4 rounded-xl transition-all text-xs flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4h2m10 0v4H7v-4m8-8V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4"></path></svg>
+              PDF Alta de Cliente
+            </button>
+
+            <button id="btn-tech-breakdown" onclick="openTechBreakdownModal()" class="w-full bg-slate-950 hover:bg-slate-800 text-amber-500 border border-amber-500/30 font-medium py-2 px-4 rounded-xl transition-all text-xs flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+              Desglose Técnico Financiero
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- MODAL: Edición Manual de Conversaciones -->
+  <div id="edit-conv-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl">
+      <h3 class="text-sm font-bold text-amber-500 uppercase tracking-wider" id="edit-modal-title">Editar Cantidad</h3>
+      <p class="text-xs text-slate-400">Ingresá el número deseado para este elemento.</p>
+      
+      <div>
+        <input type="number" id="edit-conv-input" min="0" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-amber-500 font-mono">
+        <p id="edit-conv-error" class="text-[11px] text-red-400 mt-1 hidden font-semibold"></p>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeEditModal()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">Cancelar</button>
+        <button onclick="confirmEditModal()" class="px-4 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold">Aceptar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 1: Proposal Printable Page -->
+  <div id="client-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+    <div class="bg-white text-slate-900 rounded-2xl max-w-3xl w-full shadow-2xl overflow-hidden my-auto border border-slate-200">
+      
+      <div class="bg-slate-100 px-6 py-3 border-b border-slate-200 flex justify-between items-center print:hidden">
+        <span class="text-xs font-semibold text-slate-600">Vista Previa - Propuesta Comercial</span>
+        <div class="flex gap-2">
+          <button onclick="printProposal()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+            Imprimir / Guardar PDF
+          </button>
+          <button onclick="closeClientProposalModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold">Cerrar</button>
+        </div>
+      </div>
+
+      <div id="printable-quote" class="p-8 sm:p-10 space-y-6 bg-white text-slate-900">
+        <div class="flex justify-between items-start border-b border-slate-200 pb-6">
+          <div class="flex items-center gap-3">
+            <img src="botiaxlogonaranja.png" alt="Botiax IA" class="h-10 w-auto mb-1" onerror="this.src='https://via.placeholder.com/160x45/ffffff/E58B00?text=BOTIAX+IA'">
+          </div>
+          <div class="text-right text-xs text-slate-500 space-y-1">
+            <p class="font-extrabold text-slate-800 tracking-wide text-sm">PROPUESTA COMERCIAL BOTIAX</p>
+            <p id="prop-date">Fecha: -</p>
+            <p id="prop-validity">Validez: 7 Días</p>
+          </div>
+        </div>
+
+        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-2 gap-4 text-xs">
+          <div class="space-y-1">
+            <span class="text-slate-400 block text-[10px] uppercase font-semibold">Datos del Cliente:</span>
+            <p class="font-bold text-slate-800 text-sm" id="prop-client-company"></p>
+            <p class="text-slate-700 font-medium" id="prop-client-contact"></p>
+            <p class="text-slate-600" id="prop-client-email"></p>
+            <p class="text-slate-600" id="prop-client-phone"></p>
+          </div>
+          <div class="text-right space-y-1">
+            <span class="text-slate-400 block text-[10px] uppercase font-semibold">Ejecutivo Comercial:</span>
+            <p class="font-bold text-slate-800 text-sm" id="prop-seller-name">-</p>
+            <p class="text-slate-600" id="prop-seller-email">-</p>
+            <p class="text-slate-600" id="prop-seller-phone"></p>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-amber-600 border-b border-slate-200 pb-1" id="prop-plan-header">RESUMEN DE LA PROPUESTA BOTIAX: PLAN PERSONALIZADO</h4>
+          
+          <div id="prop-plan-items-block" class="space-y-1">
+            <table class="w-full text-xs text-left">
+              <thead>
+                <tr class="text-slate-400 text-[10px] uppercase border-b border-slate-100">
+                  <th class="py-1">Ítem / Componente</th>
+                  <th class="py-1 text-right">Especificación</th>
+                </tr>
+              </thead>
+              <tbody id="prop-base-items-body" class="divide-y divide-slate-100 text-slate-700">
+              </tbody>
+            </table>
+          </div>
+
+          <div id="prop-base-features-box" class="bg-amber-50/60 border border-amber-200/80 p-3 rounded-xl text-xs space-y-1.5">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-amber-800 block">Incluido en el Plan Base Selección</span>
+            <div id="prop-base-features-list" class="text-[11px] text-amber-950/80 leading-relaxed"></div>
+          </div>
+
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Detalle del Setup de Inicio e Implementación</span>
+            <p class="text-slate-700" id="prop-setup-items-text">-</p>
+          </div>
+        </div>
+
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs flex justify-between items-center text-amber-900">
+          <span class="font-medium">Tiempo Estimado de Implementación:</span>
+          <span id="prop-impl-time" class="font-bold bg-amber-200 px-2.5 py-0.5 rounded-full text-amber-950">1 Día Hábil</span>
+        </div>
+
+        <div id="prop-note-box" class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs hidden">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Comentarios</span>
+          <p id="prop-note-text" class="text-slate-700 whitespace-pre-line"></p>
+        </div>
+
+        <div class="border-t-2 border-slate-900 pt-4 grid grid-cols-2 gap-4">
+          <div class="bg-slate-900 text-white p-4 rounded-xl space-y-1">
+            <span class="text-[10px] uppercase tracking-wider text-amber-400 font-semibold block">INVERSIÓN MENSUAL</span>
+            <div class="flex items-baseline gap-2">
+              <span id="prop-monthly-price" class="text-2xl font-extrabold text-amber-400">$0 USD</span>
+              <span id="prop-monthly-orig" class="text-xs text-slate-400 line-through"></span>
+            </div>
+          </div>
+
+          <div class="bg-slate-100 p-4 rounded-xl border border-slate-200 space-y-1">
+            <span class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold block">SETUP & INICIO (PAGO ÚNICO)</span>
+            <div class="flex items-baseline gap-2">
+              <span id="prop-setup-price" class="text-xl font-bold text-slate-800">$0 USD</span>
+              <span id="prop-setup-orig" class="text-xs text-slate-400 line-through"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="border-t border-slate-200 pt-4 space-y-2 text-[10px] text-slate-600">
+          <p class="font-bold text-slate-800 uppercase tracking-wider text-[11px]">Términos y Condiciones Generales:</p>
+          <ul class="list-disc list-inside space-y-1 leading-relaxed text-slate-600">
+            <li>Precios expresados en Dólares Estadounidenses (USD), no incluyen impuestos locales.</li>
+            <li>Facturación mensual por adelantado. Cancelación previa notificación de 30 días.</li>
+            <li>Los tickets y plantillas de whatsapp excedentes y los servicios extra, no incluidos en el plan contratado se liquidarán al final del periodo mensual según tarifa vigente. Plantillas Mkt Adicionales $0.0989 c/u, Plantillas Utility Adicionales $0.0544 c/u. Conversación Extra Sin IA $0,0488, Conversación Extra Whatsapp Sin IA: $0,1788, Conversación IA Extra $0,1488, Conversación IA Extra Whatsapp $0,2588.</li>
+            <li>WhatsApp maneja precios diferenciados para los mensajes salientes según el mercado destino de los mensajes.</li>
+            <li id="prop-custom-term" class="hidden"></li>
+            <li>Se considera una conversación un intercambio de hasta 5 interacciones. Si una conversación tiene más de 5 mensajes salientes se computará como 2 o más conversaciones según la cantidad de mensajes salientes.</li>
+          </ul>
+          
+          <div class="pt-3 border-t border-slate-100 flex justify-end items-center text-slate-500 text-[10px] gap-1">
+            <p class="font-medium text-slate-600">Botiax Equipo Comercial | comercial@botiax.com | www.botiax.com</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Alta de Cliente para Impresión / PDF -->
+  <div id="onboarding-pdf-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+    <div class="bg-white text-slate-900 rounded-2xl max-w-3xl w-full shadow-2xl overflow-hidden my-auto border border-slate-200">
+      <div class="bg-slate-100 px-6 py-3 border-b border-slate-200 flex justify-between items-center print:hidden">
+        <span class="text-xs font-semibold text-slate-600">Alta de Cliente - Vista para PDF</span>
+        <div class="flex gap-2">
+          <button onclick="printClientOnboardingPdf()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 002 2v4h2m10 0v4H7v-4m8-8V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4"></path></svg>
+            Imprimir / Guardar PDF
+          </button>
+          <button onclick="closeClientOnboardingPdfModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold">Cerrar</button>
+        </div>
+      </div>
+
+      <div id="printable-onboarding" class="p-8 sm:p-10 space-y-6 bg-white text-slate-900">
+        <div class="flex justify-between items-start border-b border-slate-200 pb-6">
+          <div class="flex items-center gap-3">
+            <img src="botiaxlogonaranja.png" alt="Botiax IA" class="h-10 w-auto mb-1" onerror="this.src='https://via.placeholder.com/160x45/ffffff/E58B00?text=BOTIAX+IA'">
+          </div>
+          <div class="text-right text-xs text-slate-500 space-y-1">
+            <p class="font-extrabold text-slate-800 tracking-wide text-sm">ALTA DE CLIENTE</p>
+            <p id="onb-pdf-date">Fecha: -</p>
+            <p id="onb-pdf-market">Mercado: -</p>
+          </div>
+        </div>
+
+        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-2 gap-4 text-xs">
+          <div class="space-y-1">
+            <span class="text-slate-400 block text-[10px] uppercase font-semibold">Datos del Cliente:</span>
+            <p class="font-bold text-slate-800 text-sm" id="onb-pdf-company"></p>
+            <p class="text-slate-700 font-medium" id="onb-pdf-contact"></p>
+            <p class="text-slate-600" id="onb-pdf-email"></p>
+            <p class="text-slate-600" id="onb-pdf-phone"></p>
+          </div>
+          <div class="text-right space-y-1">
+            <span class="text-slate-400 block text-[10px] uppercase font-semibold">Ejecutivo Comercial:</span>
+            <p class="font-bold text-slate-800 text-sm" id="onb-pdf-seller"></p>
+            <p class="text-slate-600" id="onb-pdf-seller-email"></p>
+            <p class="text-slate-600" id="onb-pdf-seller-phone"></p>
+          </div>
+        </div>
+
+        <div id="onb-pdf-partner-block" class="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-2 gap-4 text-xs">
+          <div class="space-y-1">
+            <span class="text-slate-400 block text-[10px] uppercase font-semibold">Partner:</span>
+            <p class="text-slate-700" id="onb-pdf-partner-name"></p>
+            <p class="text-slate-600" id="onb-pdf-partner-email"></p>
+          </div>
+          <div class="space-y-1 text-right">
+            <span class="text-slate-400 block text-[10px] uppercase font-semibold">Responsable de Implementación:</span>
+            <p class="text-slate-700" id="onb-pdf-implementation-name"></p>
+            <p class="text-slate-600" id="onb-pdf-implementation-email"></p>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-amber-600 border-b border-slate-200 pb-1" id="onb-pdf-plan-header">PLAN</h4>
+
+          <div>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">Datos para el alta</p>
+            <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
+              <p><strong>Fecha de inicio estimada:</strong> <span id="onb-pdf-start-date"></span></p>
+              <p><strong>Mail para facturación:</strong> <span id="onb-pdf-billing-email"></span></p>
+              <p><strong>Razón social:</strong> <span id="onb-pdf-legal-name"></span></p>
+              <p><strong>CUIT / RUT:</strong> <span id="onb-pdf-tax-id"></span></p>
+              <p><strong>País:</strong> <span id="onb-pdf-country"></span></p>
+              <p><strong>Condición frente al IVA:</strong> <span id="onb-pdf-iva"></span></p>
+              <p><strong>Moneda de cobro:</strong> <span id="onb-pdf-currency"></span></p>
+            </div>
+            <div id="onb-pdf-general-comments-box" class="mt-3 bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs hidden">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Comentarios generales</span>
+              <p id="onb-pdf-general-comments" class="text-slate-700 whitespace-pre-line"></p>
+            </div>
+          </div>
+
+          <div>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">Detalle del servicio</p>
+            <table class="w-full text-xs text-left">
+              <thead><tr class="text-slate-400 text-[10px] uppercase border-b border-slate-100"><th class="py-1">Ítem / Componente</th><th class="py-1 text-right">Especificación</th></tr></thead>
+              <tbody id="onb-pdf-service-body" class="divide-y divide-slate-100 text-slate-700"></tbody>
+            </table>
+          </div>
+
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Setup e implementación</span>
+            <p id="onb-pdf-setup" class="text-slate-700"></p>
+            <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-700">
+              <span><strong>Tiempo estimado:</strong> <span id="onb-pdf-impl-time"></span></span>
+              <span><strong>Ya pagó setup:</strong> <span id="onb-pdf-setup-paid" class="font-bold"></span></span>
+            </div>
+          </div>
+        </div>
+
+        <div id="onb-pdf-commercial-comments-box" class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs hidden">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Comentarios</span>
+          <p id="onb-pdf-commercial-comments" class="text-slate-700 whitespace-pre-line"></p>
+        </div>
+
+        <div class="border-t-2 border-slate-900 pt-4 grid grid-cols-3 gap-3">
+          <div class="bg-slate-900 text-white p-4 rounded-xl">
+            <span class="text-[10px] uppercase tracking-wider text-amber-400 font-semibold block">INVERSIÓN MENSUAL</span>
+            <div class="flex items-baseline gap-2 flex-wrap">
+              <span id="onb-pdf-monthly-list" class="text-xs text-slate-400 line-through">USD 0</span>
+              <span id="onb-pdf-monthly" class="text-xl font-extrabold text-amber-400">USD 0</span>
+            </div>
+            <span id="onb-pdf-monthly-discount" class="text-[10px] text-emerald-400"></span>
+          </div>
+          <div class="bg-slate-100 p-4 rounded-xl border border-slate-200">
+            <span class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold block">SETUP & INICIO</span>
+            <div class="flex items-baseline gap-2 flex-wrap">
+              <span id="onb-pdf-setup-list" class="text-xs text-slate-500 line-through">USD 0</span>
+              <span id="onb-pdf-setup-price" class="text-xl font-bold text-slate-800">USD 0</span>
+            </div>
+            <span id="onb-pdf-setup-discount" class="text-[10px] text-emerald-600"></span>
+          </div>
+          <div class="bg-amber-50 p-4 rounded-xl border border-amber-200">
+            <span class="text-[10px] uppercase tracking-wider text-amber-700 font-semibold block">COMISIÓN</span>
+            <span id="onb-pdf-commission" class="text-xl font-bold text-slate-800">USD 0</span>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex justify-end items-center text-slate-500 text-[10px] gap-1">
+          <p class="font-medium text-slate-600">Botiax - Soluciones de Automatización e Inteligencia Artificial Conversacional</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: Technical Breakdown & Financial Matrix -->
+  <div id="tech-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+    <div class="bg-slate-900 text-slate-100 rounded-2xl max-w-4xl w-full shadow-2xl overflow-hidden my-auto border border-slate-800 p-6 space-y-6">
+      
+      <div id="printable-tech" class="space-y-6">
+        <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+          <div>
+            <h3 class="text-sm font-bold text-amber-500 uppercase tracking-wider flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 012-2h2a2 2 0 012-2z"></path></svg>
+              Desglose Técnico y Financiero Interno
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5" id="tb-plan-title">Cotizando: Plan Base</p>
+          </div>
+          <button onclick="closeTechBreakdownModal()" class="text-slate-400 hover:text-white font-bold text-lg print:hidden">&times;</button>
+        </div>
+
+        <!-- Metadata de Cliente y Cotización -->
+        <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <div class="space-y-1">
+            <span class="text-amber-500 font-bold block uppercase text-[10px]">Información del Cliente:</span>
+            <p class="text-slate-200"><strong class="text-slate-400">Empresa:</strong> <span id="tb-client-company">-</span></p>
+            <p class="text-slate-200"><strong class="text-slate-400">Responsable:</strong> <span id="tb-client-contact">-</span></p>
+            <p class="text-slate-400"><span id="tb-client-email"></span> | <span id="tb-client-phone"></span></p>
+          </div>
+          <div class="space-y-1 text-right sm:text-right">
+            <span class="text-amber-500 font-bold block uppercase text-[10px]">Datos de Cotización:</span>
+            <p class="text-slate-200"><strong class="text-slate-400">Asesor:</strong> <span id="tb-seller-name">-</span></p>
+            <p class="text-slate-200"><strong class="text-slate-400">Fecha de Envío:</strong> <span id="tb-quote-date">-</span></p>
+            <p class="text-slate-200"><strong class="text-slate-400">Validez:</strong> <span id="tb-quote-validity">- Días</span></p>
+          </div>
+        </div>
+
+        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div><span class="text-slate-500">Partner:</span> <span id="tb-partner-name" class="font-medium text-slate-200">-</span></div>
+          <div><span class="text-slate-500">Responsable Implementación:</span> <span id="tb-implementation-name" class="font-medium text-slate-200">-</span></div>
+          <div><span class="text-slate-500">Setup:</span> <span id="tb-setup-paid" class="font-medium text-slate-200">Pendiente</span></div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-1.5">
+            <span class="text-amber-500 font-bold block uppercase tracking-wider text-[11px]">1. Resumen Financiero Mensual</span>
+            <div class="space-y-1 text-slate-300">
+              <div class="flex justify-between"><span>Precio Lista Mensual:</span><span id="tb-monthly-list" class="font-mono">$0.00 USD</span></div>
+              <div class="flex justify-between"><span>Descuento Aplicado:</span><span id="tb-monthly-disc" class="font-mono text-amber-400">$0.00 USD (0%)</span></div>
+              <div class="flex justify-between font-bold text-white border-t border-slate-800 pt-1"><span>Facturación Mensual Cliente:</span><span id="tb-monthly-final" class="font-mono text-amber-500">$0.00 USD</span></div>
+              <div class="flex justify-between"><span>Costo Directo:</span><span id="tb-monthly-cost" class="font-mono text-red-400">$0.00 USD</span></div>
+              <div class="flex justify-between"><span>Comisión Partner:</span><span id="tb-partner-comm" class="font-mono">$0.00 USD</span></div>
+              <div class="flex justify-between font-bold text-emerald-400 border-t border-slate-800 pt-1"><span>Ganancia Neta Botiax (después de comisión):</span><span id="tb-monthly-gain" class="font-mono">$0.00 USD (0% Margen)</span></div>
+            </div>
+          </div>
+
+          <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-1.5">
+            <span class="text-amber-500 font-bold block uppercase tracking-wider text-[11px]">2. Resumen Setup y Desarrollo</span>
+            <div class="space-y-1 text-slate-300">
+              <div class="flex justify-between"><span>Setup Precio Lista:</span><span id="tb-setup-list" class="font-mono">$0.00 USD</span></div>
+              <div class="flex justify-between"><span>Bonificación Setup:</span><span id="tb-setup-bonif" class="font-mono text-amber-400">$0.00 USD (0%)</span></div>
+              <div class="flex justify-between font-bold text-white border-t border-slate-800 pt-1"><span>Setup Final Cobrado:</span><span id="tb-setup-final" class="font-mono text-amber-500">$0.00 USD</span></div>
+              <div class="flex justify-between pt-2 text-slate-400"><span>Tiempo Estimado Implementación:</span><span id="tb-impl-time" class="font-bold text-slate-200">1 Día Hábil</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-300">3. Resumen de Componentes incluidos en la cotización</span>
+          <div id="tb-components-summary" class="bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-300 whitespace-pre-line"></div>
+        </div>
+
+        <div class="space-y-2">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-300">4. Matriz de Costos Directos y Márgenes por Componente</span>
+          <p class="text-[10px] text-slate-500">Los componentes incluidos muestran su precio de referencia. El descuento interno del plan se aplica al paquete completo y no se prorratea entre componentes.</p>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-950 text-slate-400 text-[10px] uppercase border-b border-slate-800">
+                  <th class="p-2">Ítem / Componente</th>
+                  <th class="p-2 text-center">Cant.</th>
+                  <th class="p-2 text-right">Costo U.</th>
+                  <th class="p-2 text-right">Costo Total</th>
+                  <th class="p-2 text-right">Precio Lista U.</th>
+                  <th class="p-2 text-right">Precio Lista Total</th>
+                  <th class="p-2 text-right">Precio con Descuento</th>
+                  <th class="p-2 text-center">Margen</th>
+                </tr>
+              </thead>
+              <tbody id="tb-cost-matrix-body" class="divide-y divide-slate-800/60 text-slate-300">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botones de Acción dentro del modal -->
+      <div class="flex justify-end gap-3 pt-2 print:hidden">
+        <button onclick="printTechBreakdown()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+          Descargar / Imprimir
+        </button>
+        <button onclick="closeTechBreakdownModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold px-4 py-2 rounded-xl text-xs">Cerrar</button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const DEFAULT_PARTNER_COMMISSION_PERCENT = 0;
+
+    const PRICING = {
+      licencia: 15,
+      canales: { wpp: 25, webchat: 25, ig: 25, fb: 25 },
+      ia_level: { none: 0, starter: 30, grow: 60, pro: 100, corporate: 150 },
+      ia_setup: { none: 0, starter: 60, grow: 120, pro: 200, corporate: 300 },
+      impl_time: { none: '1 Día Hábil', starter: '5 Días Hábiles', grow: '7 Días Hábiles', pro: '10 Días Hábiles', corporate: '15 Días Hábiles' },
+      auto_unit: 5,
+      wpp_mkt_base: 15,
+      int_correo: 15, int_sheets: 25, int_tn_posventa: 25, int_calendar: 25, int_geo: 25, int_custom: 120,
+      cap_equipo_hs: 25, cap_admin_hs: 25, analisis_it_hs: 60, config_inicial: 30, seguimiento_hs: 30
+    };
+
+    // WhatsApp Marketing: el costo directo se calcula por envío según la tarifa de
+    // Plantilla Marketing del mercado. Ej.: Argentina = USD 0,638 por envío;
+    // 500 envíos = USD 31,90.
+
+    const MARKET_RATES = {
+      "Colombia": {"plantillaMktCost":0.0145,"plantillaMktPrice":0.0225,"plantillaUtCost":0.0028,"plantillaUtPrice":0.0054,"stdNoIaCost":0,"stdNoIaPrice":0.0488,"wppNoIaCost":0.014,"wppNoIaPrice":0.028,"stdIaCost":0.035,"stdIaPrice":0.1488,"wppIaCost":0.049,"wppIaPrice":0.0724},
+      "Estados Unidos": {"plantillaMktCost":0.027,"plantillaMktPrice":0.0419,"plantillaUtCost":0.0054,"plantillaUtPrice":0.0105,"stdNoIaCost":0,"stdNoIaPrice":0.0488,"wppNoIaCost":0.027,"wppNoIaPrice":0.054,"stdIaCost":0.035,"stdIaPrice":0.1488,"wppIaCost":0.062,"wppIaPrice":0.0916},
+      "Brasil": {"plantillaMktCost":0.0645,"plantillaMktPrice":0.1,"plantillaUtCost":0.0088,"plantillaUtPrice":0.0171,"stdNoIaCost":0,"stdNoIaPrice":0.0488,"wppNoIaCost":0.044,"wppNoIaPrice":0.0836,"stdIaCost":0.035,"stdIaPrice":0.1488,"wppIaCost":0.079,"wppIaPrice":0.1168},
+      "México": {"plantillaMktCost":0.0417,"plantillaMktPrice":0.0646,"plantillaUtCost":0.0105,"plantillaUtPrice":0.0204,"stdNoIaCost":0,"stdNoIaPrice":0.0488,"wppNoIaCost":0.0525,"wppNoIaPrice":0.0945,"stdIaCost":0.035,"stdIaPrice":0.1488,"wppIaCost":0.0875,"wppIaPrice":0.1294},
+      "Resto de Latinoamérica": {"plantillaMktCost":0.076,"plantillaMktPrice":0.1178,"plantillaUtCost":0.0133,"plantillaUtPrice":0.0259,"stdNoIaCost":0,"stdNoIaPrice":0.0488,"wppNoIaCost":0.0665,"wppNoIaPrice":0.133,"stdIaCost":0.035,"stdIaPrice":0.1488,"wppIaCost":0.1015,"wppIaPrice":0.1501},
+      "Chile": {"plantillaMktCost":0.0909,"plantillaMktPrice":0.1409,"plantillaUtCost":0.022,"plantillaUtPrice":0.0428,"stdNoIaCost":0,"stdNoIaPrice":0.0488,"wppNoIaCost":0.11,"wppNoIaPrice":0.154,"stdIaCost":0.035,"stdIaPrice":0.1488,"wppIaCost":0.145,"wppIaPrice":0.2144},
+      "España": {"plantillaMktCost":0.0727,"plantillaMktPrice":0.1127,"plantillaUtCost":0.022,"plantillaUtPrice":0.0428,"stdNoIaCost":0,"stdNoIaPrice":0.0488,"wppNoIaCost":0.11,"wppNoIaPrice":0.176,"stdIaCost":0.035,"stdIaPrice":0.1488,"wppIaCost":0.145,"wppIaPrice":0.2144},
+      "Argentina": {"plantillaMktCost":0.0638,"plantillaMktPrice":0.0989,"plantillaUtCost":0.028,"plantillaUtPrice":0.0544,"stdNoIaCost":0,"stdNoIaPrice":0.0488,"wppNoIaCost":0.14,"wppNoIaPrice":0.1788,"stdIaCost":0.035,"stdIaPrice":0.1488,"wppIaCost":0.175,"wppIaPrice":0.2588},
+      "Perú": {"plantillaMktCost":0.0723,"plantillaMktPrice":0.1121,"plantillaUtCost":0.032,"plantillaUtPrice":0.0622,"stdNoIaCost":0,"stdNoIaPrice":0.0488,"wppNoIaCost":0.16,"wppNoIaPrice":0.2043,"stdIaCost":0.035,"stdIaPrice":0.1488,"wppIaCost":0.195,"wppIaPrice":0.2884},
+      "Otros": {"plantillaMktCost":0.0624,"plantillaMktPrice":0.0967,"plantillaUtCost":0.079,"plantillaUtPrice":0.1536,"stdNoIaCost":0,"stdNoIaPrice":0.0488,"wppNoIaCost":0.395,"wppNoIaPrice":0.474,"stdIaCost":0.035,"stdIaPrice":0.1488,"wppIaCost":0.43,"wppIaPrice":0.559}
+    };
+
+    const PLAN_PRESETS = {
+      base: {
+        name: 'Plan Base',
+        ia: 'none', lic: 2, auto: 2, stdChannels: 1, stdTkts: 200, wppLines: 0, wppTkts: 0,
+        cap_equipo: 1, cap_admin: 1, config_inicial: true,
+        target_price: 59, plan_discount_m: 21.08, plan_discount_s: 60,
+        baseSummary: "Sin IA • 2 Licencias • 1 Canal Standard a elección • 200 Conversaciones Estándar • 2 Automatizaciones"
+      },
+      starter: {
+        name: 'Starter',
+        ia: 'starter', lic: 2, auto: 5, stdChannels: 1, stdTkts: 200, wppLines: 0, wppTkts: 0,
+        cap_equipo: 1, cap_admin: 1, config_inicial: true,
+        target_price: 99, plan_discount_m: 29.15, plan_discount_s: 60,
+        baseSummary: "IA Starter • 2 Licencias • 1 Canal Standard a elección • 200 Conversaciones Estándar • 5 Automatizaciones"
+      },
+      grow: {
+        name: 'Grow',
+        ia: 'grow', lic: 5, auto: 5, stdChannels: 3, stdTkts: 500, wppLines: 0, wppTkts: 0,
+        int_correo: 1, int_sheets: 1, cap_equipo: 1, cap_admin: 1, config_inicial: true,
+        target_price: 199, plan_discount_m: 43.05, plan_discount_s: 60,
+        baseSummary: "IA Grow • 5 Licencias • 3 Canales Standard a elección • 500 Conversaciones Estándar • 5 Automatizaciones • 1 Integración Correo • 1 Integración Sheets"
+      },
+      pro: {
+        name: 'Pro',
+        ia: 'pro', lic: 8, auto: 10, stdChannels: 3, stdTkts: 500, wppLines: 1, wppTkts: 500,
+        int_correo: 2, int_sheets: 2, wpp_mkt: true, wpp_mkt_sends: 100,
+        cap_equipo: 1, cap_admin: 1, config_inicial: true,
+        target_price: 299, plan_discount_m: 55.30, plan_discount_s: 60,
+        baseSummary: "IA Pro • 8 Licencias • 3 Canales Standard a elección • 500 Conversaciones Estándar • 1 Canal WhatsApp • 500 Conversaciones WhatsApp • 10 Automatizaciones • 2 Int. Correo • 2 Int. Sheets • WSP MKT (100 envíos)"
+      },
+      corporate: {
+        name: 'Corporate',
+        ia: 'corporate', lic: 12, auto: 10, stdChannels: 3, stdTkts: 1000, wppLines: 1, wppTkts: 1000,
+        int_correo: 2, int_sheets: 2, wpp_mkt: true, wpp_mkt_sends: 500,
+        cap_equipo: 1, cap_admin: 1, config_inicial: true,
+        target_price: 399, plan_discount_m: 60.90, plan_discount_s: 60,
+        baseSummary: "IA Corporate • 12 Licencias • 3 Canales Standard a elección • 1000 Conversaciones Estándar • 1 Canal WhatsApp • 1000 Conversaciones WhatsApp • 10 Automatizaciones • 2 Int. Correo • 2 Int. Sheets • WSP MKT (500 envíos)"
+      },
+      custom: {
+        name: 'Personalizado',
+        ia: 'none', lic: 1, auto: 0, stdChannels: 0, stdTkts: 0, wppLines: 0, wppTkts: 0,
+        cap_equipo: 0, cap_admin: 0, config_inicial: false,
+        plan_discount_m: 0, plan_discount_s: 0,
+        baseSummary: "Configuración Personalizada a Medida"
+      }
+    };
+
+const IA_ORDER = ['none', 'starter', 'grow', 'pro', 'corporate'];
+    let activePlanKey = 'custom';
+    let currentEditChannel = null;
+
+    const customQuantities = {
+      wpp: 0,
+      std: 0,
+      webchat: 0,
+      ig: 0,
+      fb: 0,
+      wpp_mkt: 0
+    };
+
+    function updateSliderValueDisplay(id, val) {
+      const el = document.getElementById(id);
+      if (el) el.innerText = val + " ✏️";
+    }
+
+    function onSliderRangeInput(channelKey, val) {
+      const parsedVal = parseInt(val) || 0;
+
+      // No se pueden cargar conversaciones si no existe al menos un canal del tipo correspondiente.
+      if (channelKey === 'std') {
+        const hasStdChannel = ['webchat','ig','fb','email','api'].some(c => (parseInt(document.getElementById(`qty-chan-${c}`).value) || 0) > 0);
+        if (parsedVal > 0 && !hasStdChannel) {
+          document.getElementById('qty-chan-webchat').value = 1;
+          customQuantities.webchat = 1;
+        }
+      }
+      if (channelKey === 'wpp') {
+        const wppInput = document.getElementById('qty-chan-wpp');
+        if (parsedVal > 0 && (parseInt(wppInput.value) || 0) === 0) {
+          wppInput.value = 1;
+          customQuantities.wppLines = 1;
+        }
+      }
+
+      customQuantities[channelKey] = parsedVal;
+      updateSliderValueDisplay(`slider-val-${channelKey}`, parsedVal);
+      validateAndRecalculate();
+    }
+
+    function onStandardChannelQtyChange() {
+      ['webchat','ig','fb','email','api'].forEach(c => {
+        customQuantities[c] = Math.max(0, parseInt(document.getElementById(`qty-chan-${c}`).value) || 0);
+      });
+      const hasStdChannel = ['webchat','ig','fb','email','api'].some(c => customQuantities[c] > 0);
+      if (!hasStdChannel) {
+        customQuantities.std = 0;
+        const slider = document.getElementById('qty-tkt-std');
+        if (slider) slider.value = 0;
+        updateSliderValueDisplay('slider-val-std', 0);
+      }
+      validateAndRecalculate();
+    }
+
+    function onWppChannelQtyChange() {
+      customQuantities.wppLines = Math.max(0, parseInt(document.getElementById('qty-chan-wpp').value) || 0);
+      if (customQuantities.wppLines === 0) {
+        customQuantities.wpp = 0;
+        const slider = document.getElementById('qty-tkt-wpp');
+        if (slider) slider.value = 0;
+        updateSliderValueDisplay('slider-val-wpp', 0);
+      }
+      validateAndRecalculate();
+    }
+
+    function openEditModal(channelKey, channelTitle) {
+      currentEditChannel = channelKey;
+      let currentVal = customQuantities[channelKey] || 0;
+      document.getElementById('edit-modal-title').innerText = `Editar: ${channelTitle}`;
+      document.getElementById('edit-conv-input').value = currentVal;
+      document.getElementById('edit-conv-error').classList.add('hidden');
+      document.getElementById('edit-conv-modal').classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+      document.getElementById('edit-conv-modal').classList.add('hidden');
+      currentEditChannel = null;
+    }
+
+    function confirmEditModal() {
+      if (!currentEditChannel) return;
+      const val = Math.max(0, parseInt(document.getElementById('edit-conv-input').value) || 0);
+      const errEl = document.getElementById('edit-conv-error');
+
+      if (currentEditChannel === 'wpp_mkt') {
+        onWppMktInput(val);
+        closeEditModal();
+        return;
+      }
+
+      if (currentEditChannel === 'std') {
+        customQuantities.std = val;
+        const slider = document.getElementById('qty-tkt-std');
+        if (slider) slider.value = Math.min(val, 5000);
+        updateSliderValueDisplay('slider-val-std', val);
+        closeEditModal();
+        validateAndRecalculate();
+        return;
+      }
+
+      if (currentEditChannel === 'wpp') {
+        customQuantities.wpp = val;
+        const slider = document.getElementById('qty-tkt-wpp');
+        if (slider) slider.value = Math.min(val, 5000);
+        updateSliderValueDisplay('slider-val-wpp', val);
+        closeEditModal();
+        validateAndRecalculate();
+        return;
+      }
+
+      closeEditModal();
+    }
+
+    function onWppMktInput(val) {
+      const parsedVal = parseInt(val) || 0;
+      customQuantities.wpp_mkt = parsedVal;
+      const slider = document.getElementById('qty-wpp-mkt-sends');
+      if (slider) slider.value = Math.min(parsedVal, 1000);
+      updateSliderValueDisplay('slider-val-wpp-mkt', parsedVal);
+      const chk = document.getElementById('chk-wpp-mkt');
+      if (parsedVal > 0) chk.checked = true;
+      validateAndRecalculate();
+    }
+
+    function syncWppMarketingVisual() {
+      const chk = document.getElementById('chk-wpp-mkt');
+      const slider = document.getElementById('qty-wpp-mkt-sends');
+      const value = document.getElementById('slider-val-wpp-mkt');
+      const moduleBox = document.getElementById('box-wpp-mkt-module');
+      const hasWppLine = (parseInt(document.getElementById('qty-chan-wpp')?.value) || 0) > 0;
+      const enabled = !!chk?.checked && hasWppLine;
+      if (slider) {
+        slider.disabled = !enabled;
+        slider.classList.toggle('opacity-40', !enabled);
+        slider.classList.toggle('cursor-not-allowed', !enabled);
+      }
+      if (value) value.classList.toggle('opacity-40', !enabled);
+      if (moduleBox) moduleBox.classList.toggle('opacity-50', !hasWppLine);
+      syncStepperDisabledState();
+    }
+
+    const SELLER_PRESETS = {
+      valeria: { name: 'Valeria Espinosa', email: 'vespinosa@botiax.com', phone: '+51 962 623 331' },
+      adriana: { name: 'Adriana Vazquez', email: 'avazquez@botiax.com', phone: '+549 11 3381 2759' }
+    };
+
+    function onSellerPresetChange() {
+      const key = document.getElementById('seller-preset')?.value || 'new';
+      const preset = SELLER_PRESETS[key];
+      if (preset) {
+        document.getElementById('seller-name').value = preset.name;
+        document.getElementById('seller-email').value = preset.email;
+        document.getElementById('seller-phone').value = preset.phone;
+      } else {
+        document.getElementById('seller-name').value = '';
+        document.getElementById('seller-email').value = '';
+        document.getElementById('seller-phone').value = '';
+      }
+      recalculate();
+    }
+
+    function applyPlan(planKey) {
+      activePlanKey = planKey;
+      const headerPlan = document.getElementById('header-plan-select');
+      if (headerPlan) headerPlan.value = planKey;
+      const plan = PLAN_PRESETS[planKey];
+      if (!plan) return;
+
+      ['base', 'starter', 'grow', 'pro', 'corporate', 'custom'].forEach(k => {
+        const card = document.getElementById(`card-plan-${k}`);
+        if (card) {
+          if (k === planKey) {
+            card.classList.add('border-amber-500', 'bg-amber-500/10', 'ring-1', 'ring-amber-500');
+            card.classList.remove('border-slate-800');
+          } else {
+            card.classList.remove('border-amber-500', 'bg-amber-500/10', 'ring-1', 'ring-amber-500');
+            card.classList.add('border-slate-800');
+          }
+        }
+      });
+
+      const isCustom = planKey === 'custom';
+      document.getElementById('container-slider-discount-comm').classList.remove('hidden');
+      document.getElementById('container-slider-bonif-setup').classList.remove('hidden');
+      document.getElementById('container-slider-partner-commission').classList.remove('hidden');
+
+      document.getElementById('ia-level').value = plan.ia;
+      document.getElementById('qty-licencias').value = plan.lic;
+      document.getElementById('qty-auto').value = plan.auto || 0;
+
+      const channelDefaults = {webchat:0, ig:0, fb:0, email:0, api:0};
+      if (plan.stdChannels) channelDefaults.webchat = plan.stdChannels;
+      Object.keys(channelDefaults).forEach(c => {
+        customQuantities[c] = channelDefaults[c];
+        document.getElementById(`qty-chan-${c}`).value = channelDefaults[c];
+      });
+      customQuantities.std = plan.stdTkts || 0;
+      const stdSlider = document.getElementById('qty-tkt-std');
+      if (stdSlider) stdSlider.value = Math.min(plan.stdTkts || 0, 5000);
+      updateSliderValueDisplay('slider-val-std', plan.stdTkts || 0);
+
+      customQuantities.wppLines = plan.wppLines || 0;
+      customQuantities.wpp = plan.wppTkts || 0;
+      document.getElementById('qty-chan-wpp').value = plan.wppLines || 0;
+      const wppSlider = document.getElementById('qty-tkt-wpp');
+      if (wppSlider) wppSlider.value = Math.min(plan.wppTkts || 0, 5000);
+      updateSliderValueDisplay('slider-val-wpp', plan.wppTkts || 0);
+
+      document.getElementById('qty-int-email').value = plan.int_correo || 0;
+      document.getElementById('qty-int-sheets').value = plan.int_sheets || 0;
+      renderSheetToolSelectors([], true);
+      document.getElementById('qty-int-calendar').value = 0;
+      document.getElementById('qty-int-geo').value = 0;
+      renderCustomIntegrationDetails([], true);
+      document.getElementById('sel-tn-posventa').value = plan.int_tn_posventa ? "1" : "0";
+      document.getElementById('qty-tn-prods').value = plan.tn_prods || 0;
+      document.getElementById('qty-int-custom').value = 0;
+
+      document.getElementById('chk-wpp-mkt').checked = !!plan.wpp_mkt;
+      const mktSends = plan.wpp_mkt_sends || 0;
+      customQuantities.wpp_mkt = mktSends;
+      const mktSlider = document.getElementById('qty-wpp-mkt-sends');
+      if (mktSlider) mktSlider.value = Math.min(mktSends, 1000);
+      updateSliderValueDisplay('slider-val-wpp-mkt', mktSends);
+
+      document.getElementById('qty-cap-equipo').value = plan.cap_equipo || 0;
+      document.getElementById('qty-cap-admin').value = plan.cap_admin || 0;
+      document.getElementById('qty-analisis-it').value = 0;
+      document.getElementById('chk-config-inicial').checked = true;
+      document.getElementById('qty-seguimiento-hs').value = "0";
+
+      document.getElementById('slider-discount-comm').value = 0;
+      document.getElementById('slider-bonif-setup').value = isCustom ? 0 : (plan.plan_discount_s || 0);
+      const commissionSlider = document.getElementById('slider-partner-commission');
+      if (commissionSlider && !commissionSlider.dataset.userSet) commissionSlider.value = DEFAULT_PARTNER_COMMISSION_PERCENT;
+
+      onIaLevelChange();
+      recalculate();
+    }
+
+function resetCalculator() {
+      // Reinicia la configuración comercial, conservando datos del cliente/asesor, mercado, validez, notas y descuentos.
+      const keepDiscount = document.getElementById('slider-discount-comm').value;
+      const keepSetup = document.getElementById('slider-bonif-setup').value;
+      const keepCommission = document.getElementById('slider-partner-commission').value;
+      applyPlan('custom');
+      document.getElementById('slider-discount-comm').value = keepDiscount;
+      document.getElementById('slider-bonif-setup').value = keepSetup;
+      document.getElementById('slider-partner-commission').value = keepCommission;
+      document.getElementById('slider-partner-commission').dataset.userSet = '1';
+      const resetBtn = document.getElementById('btn-reset');
+      if (resetBtn) {
+        resetBtn.classList.add('bg-emerald-500/20','text-emerald-300','border-emerald-500/40');
+        setTimeout(() => resetBtn.classList.remove('bg-emerald-500/20','text-emerald-300','border-emerald-500/40'), 450);
+      }
+      recalculate();
+    }
+
+    function clearCalculator() {
+      // Limpieza total: configuración + descuentos + notas + datos de partes.
+      applyPlan('custom');
+      document.getElementById('client-company').value = '';
+      document.getElementById('client-contact').value = '';
+      document.getElementById('client-email').value = '';
+      document.getElementById('client-phone').value = '';
+      document.getElementById('seller-preset').value = 'valeria';
+      onSellerPresetChange();
+      document.getElementById('market-select').value = 'Argentina';
+      document.getElementById('quote-validity-days').value = 7;
+      document.getElementById('quote-note').value = '';
+      document.getElementById('quote-term-note').value = '';
+      document.getElementById('alta-start-date').value = '';
+      document.getElementById('alta-billing-email').value = '';
+      document.getElementById('alta-legal-name').value = '';
+      document.getElementById('alta-tax-id').value = '';
+      document.getElementById('alta-country').value = '';
+      document.getElementById('alta-iva-condition').value = '';
+      document.getElementById('alta-currency').value = 'USD';
+      document.getElementById('alta-general-comments').value = '';
+      document.getElementById('alta-partner-name').value = '';
+      document.getElementById('alta-partner-email').value = '';
+      document.getElementById('alta-implementation-name').value = '';
+      document.getElementById('alta-implementation-email').value = '';
+      document.getElementById('alta-setup-paid').checked = false;
+      document.getElementById('qty-int-sheets').value = 0;
+      resetSheetToolSelectors();
+      document.getElementById('slider-discount-comm').value = 0;
+      document.getElementById('slider-bonif-setup').value = 0;
+      const commissionSlider = document.getElementById('slider-partner-commission');
+      if (commissionSlider) { commissionSlider.value = DEFAULT_PARTNER_COMMISSION_PERCENT; delete commissionSlider.dataset.userSet; }
+      const btn = document.getElementById('btn-clear');
+      if (btn) {
+        btn.classList.add('bg-red-500/30','text-red-200','border-red-500/60');
+        setTimeout(() => btn.classList.remove('bg-red-500/30','text-red-200','border-red-500/60'), 450);
+      }
+      recalculate();
+    }
+
+    function validateMinLimits() {
+      if (!activePlanKey || !PLAN_PRESETS[activePlanKey] || activePlanKey === 'custom') return;
+      const min = PLAN_PRESETS[activePlanKey];
+
+      if (parseInt(document.getElementById('qty-licencias').value) < min.lic) {
+        document.getElementById('qty-licencias').value = min.lic;
+      }
+      if (min.auto && parseInt(document.getElementById('qty-auto').value) < min.auto) {
+        document.getElementById('qty-auto').value = min.auto;
+      }
+
+      const stdChannels = ['webchat','ig','fb','email','api'];
+      const stdCount = stdChannels.reduce((sum,c) => sum + (parseInt(document.getElementById(`qty-chan-${c}`).value)||0), 0);
+      if (stdCount < min.stdChannels) {
+        const deficit = min.stdChannels - stdCount;
+        const webchatInput = document.getElementById('qty-chan-webchat');
+        webchatInput.value = (parseInt(webchatInput.value)||0) + deficit;
+      }
+      const stdT = customQuantities.std || 0;
+      if (stdT < (min.stdTkts || 0)) {
+        customQuantities.std = min.stdTkts || 0;
+        document.getElementById('qty-tkt-std').value = Math.min(min.stdTkts || 0, 5000);
+        updateSliderValueDisplay('slider-val-std', min.stdTkts || 0);
+      }
+
+      const wppLines = parseInt(document.getElementById('qty-chan-wpp').value)||0;
+      if (wppLines < (min.wppLines || 0)) {
+        document.getElementById('qty-chan-wpp').value = min.wppLines || 0;
+        customQuantities.wppLines = min.wppLines || 0;
+      }
+      if ((customQuantities.wpp || 0) < (min.wppTkts || 0)) {
+        customQuantities.wpp = min.wppTkts || 0;
+        document.getElementById('qty-tkt-wpp').value = Math.min(min.wppTkts || 0, 5000);
+        updateSliderValueDisplay('slider-val-wpp', min.wppTkts || 0);
+      }
+
+      if (min.int_correo && parseInt(document.getElementById('qty-int-email').value) < min.int_correo) document.getElementById('qty-int-email').value = min.int_correo;
+      if (min.int_sheets && parseInt(document.getElementById('qty-int-sheets').value) < min.int_sheets) document.getElementById('qty-int-sheets').value = min.int_sheets;
+
+      if (min.wpp_mkt) {
+        document.getElementById('chk-wpp-mkt').checked = true;
+        if (min.wpp_mkt_sends && customQuantities.wpp_mkt < min.wpp_mkt_sends) {
+          customQuantities.wpp_mkt = min.wpp_mkt_sends;
+          document.getElementById('qty-wpp-mkt-sends').value = Math.min(min.wpp_mkt_sends,1000);
+          updateSliderValueDisplay('slider-val-wpp-mkt', min.wpp_mkt_sends);
+        }
+      }
+    }
+
+    function validateAndRecalculate() {
+      validateMinLimits();
+      recalculate();
+    }
+
+function onWppChannelToggle(isWppActive) {
+      const mktCard = document.getElementById('wpp-marketing-card');
+      const lockMsg = document.getElementById('wpp-lock-msg');
+      if (isWppActive) {
+        mktCard.classList.remove('disabled-card');
+        lockMsg.classList.add('hidden');
+      } else {
+        mktCard.classList.add('disabled-card');
+        lockMsg.classList.remove('hidden');
+        document.getElementById('chk-wpp-mkt').checked = false;
+        customQuantities.wpp_mkt = 0;
+        const slider = document.getElementById('qty-wpp-mkt-sends');
+        if (slider) slider.value = 0;
+        updateSliderValueDisplay('slider-val-wpp-mkt', 0);
+        document.getElementById('qty-plantillas-mkt').value = 0;
+        document.getElementById('qty-plantillas-ut').value = 0;
+      }
+    }
+
+function onIaLevelChange() {
+      const iaSelect = document.getElementById('ia-level');
+      let currentIa = iaSelect.value;
+
+      if (activePlanKey && PLAN_PRESETS[activePlanKey] && activePlanKey !== 'custom') {
+        const planIa = PLAN_PRESETS[activePlanKey].ia;
+        const currentIdx = IA_ORDER.indexOf(currentIa);
+        const planIdx = IA_ORDER.indexOf(planIa);
+
+        if (currentIdx < planIdx) {
+          iaSelect.value = planIa;
+          currentIa = planIa;
+          alert(`El plan ${PLAN_PRESETS[activePlanKey].name} incluye como mínimo Asistente IA (${planIa.toUpperCase()}). No se puede reducir la categoría.`);
+        }
+      }
+
+      const intContainers = document.querySelectorAll('.integrations-container');
+      intContainers.forEach(el => {
+        if (currentIa === 'none') {
+          el.classList.add('opacity-40', 'pointer-events-none');
+          el.querySelectorAll('input').forEach(i => i.value = 0);
+          el.querySelectorAll('select').forEach(i => i.selectedIndex = 0);
+          el.querySelectorAll('textarea').forEach(i => i.value = '');
+        } else {
+          el.classList.remove('opacity-40', 'pointer-events-none');
+        }
+      });
+
+      recalculate();
+    }
+
+    const SHEET_TOOL_OPTIONS = [
+      ['novedades', 'Tool Novedades'],
+      ['catalogo', 'Tool Catálogo'],
+      ['recoleccion_datos', 'Tool recolección de datos'],
+      ['recoleccion_leads', 'Tool recolección de leads'],
+      ['otra', 'Otra']
+    ];
+
+    function createSheetToolSelector(index, existing = {}) {
+      const wrap = document.createElement('div');
+      wrap.className = 'sheet-tool-item rounded-lg border border-slate-800 bg-slate-950 p-2';
+      const options = SHEET_TOOL_OPTIONS.map(([value, label]) => `<option value="${value}">${label}</option>`).join('');
+      const selected = existing.type || 'novedades';
+      wrap.innerHTML = `
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 items-start">
+          <div>
+            <label class="block text-[10px] text-slate-400 mb-1">Tool ${index}</label>
+            <select class="sheet-tool-select w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-amber-500">${options}</select>
+          </div>
+          <div class="sheet-tool-purpose-wrap hidden">
+            <label class="block text-[10px] text-slate-400 mb-1">Propósito de la tool</label>
+            <textarea rows="2" class="sheet-tool-purpose w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-amber-500 resize-y" placeholder="¿Para qué se va a usar esta integración?"></textarea>
+          </div>
+        </div>`;
+      const select = wrap.querySelector('.sheet-tool-select');
+      const purpose = wrap.querySelector('.sheet-tool-purpose');
+      const purposeWrap = wrap.querySelector('.sheet-tool-purpose-wrap');
+      select.value = SHEET_TOOL_OPTIONS.some(([v]) => v === selected) ? selected : 'novedades';
+      purpose.value = existing.purpose || '';
+      const sync = () => {
+        purposeWrap.classList.toggle('hidden', select.value !== 'otra');
+      };
+      select.addEventListener('change', () => { sync(); recalculate(); });
+      purpose.addEventListener('input', recalculate);
+      sync();
+      return wrap;
+    }
+
+    function renderSheetToolSelectors(existingTools = [], force = false) {
+      const qty = Math.max(0, parseInt(document.getElementById('qty-int-sheets')?.value) || 0);
+      const container = document.getElementById('box-sheet-tools');
+      if (!container) return;
+      container.classList.toggle('hidden', qty <= 0);
+      const currentItems = container.querySelectorAll('.sheet-tool-item');
+      if (!force && currentItems.length === qty) return;
+      const currentSelections = !force ? getSheetToolSelections() : existingTools;
+      container.innerHTML = '';
+      for (let i = 0; i < qty; i++) {
+        container.appendChild(createSheetToolSelector(i + 1, existingTools[i] || currentSelections[i] || {}));
+      }
+    }
+
+    function getSheetToolSelections() {
+      return Array.from(document.querySelectorAll('#box-sheet-tools .sheet-tool-item')).map((item, idx) => {
+        const type = item.querySelector('.sheet-tool-select')?.value || 'novedades';
+        const purpose = item.querySelector('.sheet-tool-purpose')?.value.trim() || '';
+        const names = Object.fromEntries(SHEET_TOOL_OPTIONS);
+        return { index: idx + 1, type, name: names[type] || type, purpose };
+      });
+    }
+
+    function resetSheetToolSelectors() {
+      const container = document.getElementById('box-sheet-tools');
+      if (container) {
+        container.innerHTML = '';
+        container.classList.add('hidden');
+      }
+    }
+
+    function renderCustomIntegrationDetails(existingDetails = [], force = false) {
+      const qty = Math.max(0, parseInt(document.getElementById('qty-int-custom')?.value) || 0);
+      const container = document.getElementById('box-int-custom-details');
+      if (!container) return;
+      container.classList.toggle('hidden', qty <= 0);
+      const currentItems = container.querySelectorAll('.custom-int-item');
+      if (!force && currentItems.length === qty) return;
+      const currentDetails = !force ? getCustomIntegrationDetails() : existingDetails;
+      container.innerHTML = '';
+      for (let i = 0; i < qty; i++) {
+        const item = document.createElement('div');
+        item.className = 'custom-int-item rounded-lg border border-slate-800 bg-slate-950 p-2';
+        item.innerHTML = `
+          <label class="block text-[10px] text-slate-400 mb-1">Detalle de la integración ${i + 1}</label>
+          <textarea rows="3" class="custom-int-detail w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-amber-500 resize-y" placeholder="¿Con qué nos tenemos que integrar y cuál es el objetivo de la integración?"></textarea>`;
+        const textarea = item.querySelector('.custom-int-detail');
+        textarea.value = currentDetails[i] || '';
+        textarea.addEventListener('input', recalculate);
+        container.appendChild(item);
+      }
+    }
+
+    function getCustomIntegrationDetails() {
+      return Array.from(document.querySelectorAll('#box-int-custom-details .custom-int-item')).map(item =>
+        item.querySelector('.custom-int-detail')?.value.trim() || ''
+      );
+    }
+
+    function syncIntegrationDetailVisibility() {
+      renderSheetToolSelectors();
+      renderCustomIntegrationDetails();
+    }
+
+    function onIntegrationChange() {
+      const ia = document.getElementById('ia-level').value;
+      const intEmail = parseInt(document.getElementById('qty-int-email').value) || 0;
+      const intSheets = parseInt(document.getElementById('qty-int-sheets').value) || 0;
+      const intCalendar = parseInt(document.getElementById('qty-int-calendar').value) || 0;
+      const intGeo = parseInt(document.getElementById('qty-int-geo').value) || 0;
+      const intTnPos = parseInt(document.getElementById('sel-tn-posventa').value) || 0;
+      const tnProds = parseInt(document.getElementById('qty-tn-prods').value) || 0;
+      const intCustom = parseInt(document.getElementById('qty-int-custom').value) || 0;
+
+      const hasIntegrations = intEmail > 0 || intSheets > 0 || intCalendar > 0 || intGeo > 0 || intTnPos > 0 || tnProds > 0 || intCustom > 0;
+
+      if (hasIntegrations && (ia === 'none' || ia === 'starter')) {
+        document.getElementById('ia-level').value = 'grow';
+        alert('Las integraciones requieren Asistente IA GROW o superior. Se ha actualizado automáticamente.');
+      }
+
+      syncIntegrationDetailVisibility();
+      recalculate();
+    }
+
+    function calcTiendaNubeCatPrice(prods) {
+      if (prods <= 0) return 0;
+      if (prods <= 15) return 30;
+      if (prods <= 30) return prods * 1.83;
+      if (prods <= 50) return prods * 1.60;
+      if (prods <= 80) return prods * 1.25;
+      return prods * 1.00;
+    }
+
+    function toggleSelectionClass(elementId, isSelected) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      if (isSelected) {
+        el.classList.add('card-item-selected');
+      } else {
+        el.classList.remove('card-item-selected');
+      }
+    }
+
+    function updateCardHighlights() {
+      const iaVal = document.getElementById('ia-level').value;
+      toggleSelectionClass('box-ia-level', iaVal !== 'none');
+
+      const licVal = parseInt(document.getElementById('qty-licencias').value) || 0;
+      toggleSelectionClass('box-qty-licencias', licVal >= 1);
+
+      const autoVal = parseInt(document.getElementById('qty-auto').value) || 0;
+      toggleSelectionClass('box-qty-auto', autoVal > 0);
+
+      const intEmailVal = parseInt(document.getElementById('qty-int-email').value) || 0;
+      toggleSelectionClass('box-int-email', intEmailVal > 0);
+
+      const intSheetsVal = parseInt(document.getElementById('qty-int-sheets').value) || 0;
+      toggleSelectionClass('box-int-sheets', intSheetsVal > 0);
+
+      const tnPosventaVal = document.getElementById('sel-tn-posventa').value;
+      toggleSelectionClass('box-tn-posventa', tnPosventaVal === '1');
+
+      const tnProdsVal = parseInt(document.getElementById('qty-tn-prods').value) || 0;
+      toggleSelectionClass('box-tn-cat', tnProdsVal > 0);
+
+      const intCustomVal = parseInt(document.getElementById('qty-int-custom').value) || 0;
+      toggleSelectionClass('box-int-custom', intCustomVal > 0);
+
+      const intCalendarVal = parseInt(document.getElementById('qty-int-calendar').value) || 0;
+      toggleSelectionClass('box-int-calendar', intCalendarVal > 0);
+
+      const intGeoVal = parseInt(document.getElementById('qty-int-geo').value) || 0;
+      toggleSelectionClass('box-int-geo', intGeoVal > 0);
+
+      const plantillasMktVal = parseInt(document.getElementById('qty-plantillas-mkt').value) || 0;
+      toggleSelectionClass('box-plantillas-mkt', plantillasMktVal > 0);
+
+      const plantillasUtVal = parseInt(document.getElementById('qty-plantillas-ut').value) || 0;
+      toggleSelectionClass('box-plantillas-ut', plantillasUtVal > 0);
+
+      const capEquipoVal = parseInt(document.getElementById('qty-cap-equipo').value) || 0;
+      toggleSelectionClass('box-cap-equipo', capEquipoVal > 0);
+
+      const capAdminVal = parseInt(document.getElementById('qty-cap-admin').value) || 0;
+      toggleSelectionClass('box-cap-admin', capAdminVal > 0);
+
+      const analisisItVal = parseInt(document.getElementById('qty-analisis-it').value) || 0;
+      toggleSelectionClass('box-analisis-it', analisisItVal > 0);
+
+      const chkConfigInicial = document.getElementById('chk-config-inicial').checked;
+      toggleSelectionClass('box-config-inicial', chkConfigInicial);
+
+      const seguimientoVal = document.getElementById('qty-seguimiento-hs').value;
+      toggleSelectionClass('box-seguimiento-hs', seguimientoVal !== '0');
+    }
+
+    function setActionButtonsEnabled(enabled) {
+      ['btn-preview-prop','btn-copy-wpp','btn-download-alta','btn-pdf-alta','btn-tech-breakdown'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        btn.disabled = !enabled;
+        btn.classList.toggle('opacity-50', !enabled);
+        btn.classList.toggle('cursor-not-allowed', !enabled);
+      });
+    }
+
+    function recalculate() {
+      updateCardHighlights();
+      syncIntegrationDetailVisibility();
+
+      const ia = document.getElementById('ia-level').value;
+      const lic = parseInt(document.getElementById('qty-licencias').value) || 0;
+      const hasIa = ia !== 'none';
+      const market = document.getElementById('market-select').value || 'Argentina';
+      const rates = MARKET_RATES[market] || MARKET_RATES['Argentina'];
+
+      const currentPlanName = activePlanKey && PLAN_PRESETS[activePlanKey] ? PLAN_PRESETS[activePlanKey].name : 'Personalizado';
+      document.getElementById('summary-selected-plan').innerText = `Plan Seleccionado: ${currentPlanName}`;
+
+      const isCustomPlan = (activePlanKey === 'custom');
+
+      // Canales estándar: cantidades por tipo, con una única bolsa de conversaciones.
+      const stdChannels = {
+        webchat: Math.max(0, parseInt(document.getElementById('qty-chan-webchat').value) || 0),
+        ig: Math.max(0, parseInt(document.getElementById('qty-chan-ig').value) || 0),
+        fb: Math.max(0, parseInt(document.getElementById('qty-chan-fb').value) || 0),
+        email: Math.max(0, parseInt(document.getElementById('qty-chan-email').value) || 0),
+        api: Math.max(0, parseInt(document.getElementById('qty-chan-api').value) || 0)
+      };
+      const stdChannelCount = stdChannels.webchat + stdChannels.ig + stdChannels.fb + stdChannels.email + stdChannels.api;
+
+      // WhatsApp: líneas separadas + una única bolsa de conversaciones.
+      const wppLines = Math.max(0, parseInt(document.getElementById('qty-chan-wpp').value) || 0);
+      const stdTkts = Math.max(0, customQuantities.std || 0);
+      const wppTkts = Math.max(0, customQuantities.wpp || 0);
+
+      customQuantities.webchat = stdChannels.webchat;
+      customQuantities.ig = stdChannels.ig;
+      customQuantities.fb = stdChannels.fb;
+      customQuantities.email = stdChannels.email;
+      customQuantities.api = stdChannels.api;
+      customQuantities.wppLines = wppLines;
+      customQuantities.wpp = wppTkts;
+
+      const activeStandardTypes = Object.keys(stdChannels).filter(c => stdChannels[c] > 0);
+      const activeChannels = [...activeStandardTypes];
+      if (wppLines > 0) activeChannels.push('wpp');
+
+      const totalTkts = stdTkts + wppTkts;
+      const hasAnyChannel = stdChannelCount > 0 || wppLines > 0;
+
+      const channelNamesFormatted = {
+        wpp: 'WhatsApp API',
+        webchat: 'Web Chat',
+        ig: 'Instagram',
+        fb: 'Facebook',
+        email: 'Correo electrónico',
+        api: 'Mensajería API'
+      };
+
+      const channelDetailParts = [];
+      if (stdChannels.webchat) channelDetailParts.push(`${stdChannels.webchat} Web Chat`);
+      if (stdChannels.ig) channelDetailParts.push(`${stdChannels.ig} Instagram`);
+      if (stdChannels.fb) channelDetailParts.push(`${stdChannels.fb} Facebook`);
+      if (stdChannels.email) channelDetailParts.push(`${stdChannels.email} Correo electrónico`);
+      if (stdChannels.api) channelDetailParts.push(`${stdChannels.api} Mensajería API`);
+      if (wppLines) channelDetailParts.push(`${wppLines} WhatsApp API`);
+
+      document.getElementById('std-channel-count-badge').innerText = `${stdChannelCount} canal${stdChannelCount === 1 ? '' : 'es'}`;
+      document.getElementById('wpp-channel-count-badge').innerText = `${wppLines} línea${wppLines === 1 ? '' : 's'}`;
+
+      toggleSelectionClass('box-chan-webchat', stdChannels.webchat > 0);
+      toggleSelectionClass('box-chan-ig', stdChannels.ig > 0);
+      toggleSelectionClass('box-chan-fb', stdChannels.fb > 0);
+      toggleSelectionClass('box-chan-email', stdChannels.email > 0);
+      toggleSelectionClass('box-chan-api', stdChannels.api > 0);
+      toggleSelectionClass('box-chan-wpp', wppLines > 0);
+      onWppChannelToggle(wppLines > 0);
+      syncWppMarketingVisual();
+
+      const stdTicketEnabled = stdChannelCount > 0;
+      const wppTicketEnabled = wppLines > 0;
+      const stdSliderEl = document.getElementById('qty-tkt-std');
+      const wppSliderEl = document.getElementById('qty-tkt-wpp');
+      if (stdSliderEl) {
+        stdSliderEl.disabled = !stdTicketEnabled;
+        stdSliderEl.classList.toggle('opacity-40', !stdTicketEnabled);
+        stdSliderEl.classList.toggle('cursor-not-allowed', !stdTicketEnabled);
+      }
+      if (wppSliderEl) {
+        wppSliderEl.disabled = !wppTicketEnabled;
+        wppSliderEl.classList.toggle('opacity-40', !wppTicketEnabled);
+        wppSliderEl.classList.toggle('cursor-not-allowed', !wppTicketEnabled);
+      }
+      document.getElementById('slider-val-std')?.classList.toggle('opacity-40', !stdTicketEnabled);
+      document.getElementById('slider-val-wpp')?.classList.toggle('opacity-40', !wppTicketEnabled);
+
+      const stdRate = hasIa ? rates.stdIaPrice : rates.stdNoIaPrice;
+      const wppRate = hasIa ? rates.wppIaPrice : rates.wppNoIaPrice;
+      document.getElementById('rate-badge-std')?.remove();
+      document.getElementById('wpp-rate-help').innerText = `Mercado ${market}: $${wppRate.toFixed(4)}/conversación${hasIa ? ' con IA' : ' sin IA'}.`;
+      const wppLabel = document.getElementById('plantilla-mkt-rate-label');
+      const utLabel = document.getElementById('plantilla-ut-rate-label');
+      if (wppLabel) wppLabel.innerText = `$${rates.plantillaMktPrice.toFixed(4)}`;
+      if (utLabel) utLabel.innerText = `$${rates.plantillaUtPrice.toFixed(4)}`;
+
+      const warnLic = document.getElementById('warn-lic');
+      const warnChan = document.getElementById('warn-channel');
+      const warningBox = document.getElementById('min-req-warning');
+
+      let isValid = true;
+      if (lic < 1) { warnLic.classList.remove('hidden'); isValid = false; } else warnLic.classList.add('hidden');
+      if (!hasAnyChannel || totalTkts < 1) { warnChan.classList.remove('hidden'); isValid = false; } else warnChan.classList.add('hidden');
+
+      if (!isValid) {
+        warningBox.classList.remove('hidden');
+        document.getElementById('display-monthly-final').innerText = "NO PERMITIDO";
+        document.getElementById('display-setup-final').innerText = "NO PERMITIDO";
+        document.getElementById('header-monthly-price').innerText = 'USD 0';
+        document.getElementById('header-setup-price').innerText = 'USD 0';
+        const commissionSlider = document.getElementById('slider-partner-commission');
+        document.getElementById('partner-commission-val').innerText = `${commissionSlider ? commissionSlider.value : DEFAULT_PARTNER_COMMISSION_PERCENT}%`;
+        setActionButtonsEnabled(false);
+        document.getElementById('quote-margin-warning')?.classList.add('hidden');
+        window.lastQuoteData = null;
+        return;
+      } else {
+        warningBox.classList.add('hidden');
+      }
+
+      const autos = parseInt(document.getElementById('qty-auto').value) || 0;
+      const intEmail = parseInt(document.getElementById('qty-int-email').value) || 0;
+      const intSheets = parseInt(document.getElementById('qty-int-sheets').value) || 0;
+      const intCalendar = parseInt(document.getElementById('qty-int-calendar').value) || 0;
+      const intGeo = parseInt(document.getElementById('qty-int-geo').value) || 0;
+      const intTnPos = parseInt(document.getElementById('sel-tn-posventa').value) || 0;
+      const tnProds = parseInt(document.getElementById('qty-tn-prods').value) || 0;
+      const intCustom = parseInt(document.getElementById('qty-int-custom').value) || 0;
+      const isWppMkt = document.getElementById('chk-wpp-mkt').checked;
+      const wppMktSends = customQuantities.wpp_mkt || 0;
+      const plantillasMkt = parseInt(document.getElementById('qty-plantillas-mkt').value) || 0;
+      const plantillasUt = parseInt(document.getElementById('qty-plantillas-ut').value) || 0;
+      const segHs = parseInt(document.getElementById('qty-seguimiento-hs').value) || 0;
+
+      const tnCatPrice = calcTiendaNubeCatPrice(tnProds);
+      document.getElementById('tn-cat-price-label').innerText = `$${tnCatPrice.toFixed(2)} USD/mes`;
+
+      toggleSelectionClass('box-tn-cat', tnProds > 0);
+      toggleSelectionClass('box-wpp-mkt-module', isWppMkt);
+
+      let wppMktCost = 0;
+      if (isWppMkt && wppLines > 0 && wppMktSends > 0) {
+        wppMktCost = wppMktSends * rates.plantillaMktCost;
+      }
+
+      const stdConvPrice = stdTkts * stdRate;
+      const wppConvPrice = wppTkts * wppRate;
+      const totalTktPrice = stdConvPrice + wppConvPrice;
+      const totalTktCost = stdTkts * (hasIa ? rates.stdIaCost : rates.stdNoIaCost)
+        + wppTkts * (hasIa ? rates.wppIaCost : rates.wppNoIaCost);
+
+      const totalDirectCost =
+        totalTktCost +
+        wppMktCost +
+        plantillasMkt * rates.plantillaMktCost +
+        plantillasUt * rates.plantillaUtCost;
+
+      let basePlanMonthlyList = 0;
+      let extrasMonthlyList = 0;
+      let basePlanDiscountPercent = 0;
+
+      const planPreset = (!isCustomPlan && activePlanKey && PLAN_PRESETS[activePlanKey]) ? PLAN_PRESETS[activePlanKey] : null;
+
+      if (planPreset) {
+        basePlanDiscountPercent = planPreset.plan_discount_m || 0;
+
+        const baseLic = planPreset.lic || 0;
+        extrasMonthlyList += Math.max(0, lic - baseLic) * PRICING.licencia;
+
+        const baseStdChannels = planPreset.stdChannels || 0;
+        extrasMonthlyList += Math.max(0, stdChannelCount - baseStdChannels) * PRICING.canales.webchat;
+
+        const baseWppLines = planPreset.wppLines || 0;
+        extrasMonthlyList += Math.max(0, wppLines - baseWppLines) * PRICING.canales.wpp;
+
+        const baseStdTkts = planPreset.stdTkts || 0;
+        const baseWppTkts = planPreset.wppTkts || 0;
+        if (stdTkts > baseStdTkts) extrasMonthlyList += (stdTkts - baseStdTkts) * stdRate;
+        if (wppTkts > baseWppTkts) extrasMonthlyList += (wppTkts - baseWppTkts) * wppRate;
+
+        const baseAuto = planPreset.auto || 0;
+        extrasMonthlyList += Math.max(0, autos - baseAuto) * PRICING.auto_unit;
+
+        extrasMonthlyList += Math.max(0, intEmail - (planPreset.int_correo || 0)) * PRICING.int_correo;
+        extrasMonthlyList += Math.max(0, intSheets - (planPreset.int_sheets || 0)) * PRICING.int_sheets;
+        extrasMonthlyList += intCalendar * PRICING.int_calendar;
+        extrasMonthlyList += intGeo * PRICING.int_geo;
+        if (intTnPos > (planPreset.int_tn_posventa ? 1 : 0)) extrasMonthlyList += PRICING.int_tn_posventa;
+        extrasMonthlyList += tnCatPrice;
+        extrasMonthlyList += intCustom * PRICING.int_custom;
+
+        if (isWppMkt && !planPreset.wpp_mkt) {
+          extrasMonthlyList += PRICING.wpp_mkt_base;
+          if (wppMktSends > 100) extrasMonthlyList += (wppMktSends - 100) * rates.plantillaMktPrice;
+        } else if (isWppMkt && planPreset.wpp_mkt) {
+          const baseSends = planPreset.wpp_mkt_sends || 100;
+          if (wppMktSends > baseSends) extrasMonthlyList += (wppMktSends - baseSends) * rates.plantillaMktPrice;
+        }
+
+        extrasMonthlyList += plantillasMkt * rates.plantillaMktPrice;
+        extrasMonthlyList += plantillasUt * rates.plantillaUtPrice;
+        extrasMonthlyList += segHs * PRICING.seguimiento_hs;
+
+        const planIaPrice = PRICING.ia_level[planPreset.ia] || 0;
+        const currentIaPrice = PRICING.ia_level[ia] || 0;
+        if (currentIaPrice > planIaPrice) extrasMonthlyList += currentIaPrice - planIaPrice;
+
+        const fixedMarketPrices = { pro: { 'Otros': 599 }, corporate: { 'Otros': 799, 'Perú': 449 } };
+        const marketTarget = fixedMarketPrices[activePlanKey] && fixedMarketPrices[activePlanKey][market];
+        const desiredFinalPlanPrice = marketTarget || planPreset.target_price;
+        basePlanMonthlyList = desiredFinalPlanPrice / (1 - basePlanDiscountPercent / 100);
+      } else {
+        basePlanMonthlyList = 0;
+        extrasMonthlyList += PRICING.ia_level[ia];
+        extrasMonthlyList += lic * PRICING.licencia;
+        extrasMonthlyList += stdChannelCount * PRICING.canales.webchat;
+        extrasMonthlyList += wppLines * PRICING.canales.wpp;
+        extrasMonthlyList += totalTktPrice;
+        extrasMonthlyList += autos * PRICING.auto_unit;
+        extrasMonthlyList += intEmail * PRICING.int_correo;
+        extrasMonthlyList += intSheets * PRICING.int_sheets;
+        extrasMonthlyList += intCalendar * PRICING.int_calendar;
+        extrasMonthlyList += intGeo * PRICING.int_geo;
+        extrasMonthlyList += intTnPos * PRICING.int_tn_posventa;
+        extrasMonthlyList += tnCatPrice;
+        extrasMonthlyList += intCustom * PRICING.int_custom;
+
+        if (isWppMkt && wppLines > 0) {
+          extrasMonthlyList += PRICING.wpp_mkt_base;
+          if (wppMktSends > 100) extrasMonthlyList += (wppMktSends - 100) * rates.plantillaMktPrice;
+        }
+
+        extrasMonthlyList += plantillasMkt * rates.plantillaMktPrice;
+        extrasMonthlyList += plantillasUt * rates.plantillaUtPrice;
+        extrasMonthlyList += segHs * PRICING.seguimiento_hs;
+      }
+
+      const monthlyListPrice = basePlanMonthlyList + extrasMonthlyList;
+
+      // SETUP
+      let setupListPrice = PRICING.ia_setup[ia];
+      const capEquipoHs = parseInt(document.getElementById('qty-cap-equipo').value) || 0;
+      const capAdminHs = parseInt(document.getElementById('qty-cap-admin').value) || 0;
+      const analisisItHs = parseInt(document.getElementById('qty-analisis-it').value) || 0;
+      const configInicial = document.getElementById('chk-config-inicial').checked;
+      setupListPrice += capEquipoHs * PRICING.cap_equipo_hs;
+      setupListPrice += capAdminHs * PRICING.cap_admin_hs;
+      setupListPrice += analisisItHs * PRICING.analisis_it_hs;
+      if (configInicial) setupListPrice += PRICING.config_inicial;
+
+      // Descuento especial: disponible para planes y personalizado, hasta 70%.
+      // El descuento interno de un plan se mantiene oculto y se aplica antes del especial.
+      const requestedSpecialDiscount = Math.max(0, Math.min(70, parseInt(document.getElementById('slider-discount-comm').value) || 0));
+      let extraCommDiscountPercent = requestedSpecialDiscount;
+      let setupBonifPercent = Math.max(0, Math.min(100, parseInt(document.getElementById('slider-bonif-setup').value) || 0));
+      const rawCommission = parseInt(document.getElementById('slider-partner-commission').value);
+      const partnerCommPercent = Number.isFinite(rawCommission) ? Math.max(0, Math.min(30, rawCommission)) : DEFAULT_PARTNER_COMMISSION_PERCENT;
+
+      function calcMargin(discP, partP) {
+        const planAfterInternal = basePlanMonthlyList * (1 - basePlanDiscountPercent / 100);
+        const finalBase = planAfterInternal * (1 - discP / 100);
+        const finalExtras = extrasMonthlyList * (1 - discP / 100);
+        const finalRawM = finalBase + finalExtras;
+        const finalM = Math.max(0, Math.floor(finalRawM));
+        const partAmt = finalM * (partP / 100);
+        const netG = finalM - totalDirectCost - partAmt;
+        const margPct = finalM > 0 ? (netG / finalM) * 100 : -999;
+        const effectiveDiscountPct = monthlyListPrice > 0 ? Math.max(0, (1 - (finalM / monthlyListPrice)) * 100) : 0;
+        return { totD: effectiveDiscountPct, extraD: discP, baseD: basePlanDiscountPercent, finalM, finalRawM, partAmt, netG, margPct, planAfterInternal, finalBase, finalExtras };
+      }
+
+      const discountSlider = document.getElementById('slider-discount-comm');
+      const commissionSlider = document.getElementById('slider-partner-commission');
+
+      // La comisión nueva no debe bajar el descuento especial salvo que sea necesario para conservar >=20%.
+      let calc = calcMargin(extraCommDiscountPercent, partnerCommPercent);
+      const marginAtZeroDiscount = calcMargin(0, partnerCommPercent).margPct;
+      let maxAllowedSpecialDiscount = 0;
+
+      if (marginAtZeroDiscount >= 20) {
+        for (let d = 70; d >= 0; d--) {
+          if (calcMargin(d, partnerCommPercent).margPct >= 20) {
+            maxAllowedSpecialDiscount = d;
+            break;
+          }
+        }
+        if (extraCommDiscountPercent > maxAllowedSpecialDiscount) {
+          extraCommDiscountPercent = maxAllowedSpecialDiscount;
+          calc = calcMargin(extraCommDiscountPercent, partnerCommPercent);
+        }
+        discountSlider.max = maxAllowedSpecialDiscount;
+        discountSlider.value = extraCommDiscountPercent;
+        discountSlider.disabled = maxAllowedSpecialDiscount === 0;
+        discountSlider.classList.toggle('opacity-50', maxAllowedSpecialDiscount === 0);
+        discountSlider.classList.toggle('cursor-not-allowed', maxAllowedSpecialDiscount === 0);
+      } else {
+        // Incluso sin descuento no alcanza el 20%: la cotización queda bloqueada.
+        extraCommDiscountPercent = 0;
+        calc = calcMargin(0, partnerCommPercent);
+        discountSlider.max = 70;
+        discountSlider.value = 0;
+        discountSlider.disabled = true;
+        discountSlider.classList.add('opacity-50', 'cursor-not-allowed');
+      }
+
+      commissionSlider.value = partnerCommPercent;
+      document.getElementById('commercial-discount-val').innerText = `${extraCommDiscountPercent}%`;
+      document.getElementById('setup-bonif-val').innerText = `${setupBonifPercent}%`;
+      document.getElementById('partner-commission-val').innerText = `${partnerCommPercent}%`;
+
+      const finalMonthlyPrice = Math.floor(calc.finalM);
+      const finalSetupPrice = Math.floor(setupListPrice * (1 - setupBonifPercent / 100));
+      const headerMonthly = document.getElementById('header-monthly-price');
+      const headerSetup = document.getElementById('header-setup-price');
+      if (headerMonthly) headerMonthly.innerText = finalMonthlyPrice > 0 ? `USD ${finalMonthlyPrice}` : 'USD 0';
+      if (headerSetup) headerSetup.innerText = finalSetupPrice > 0 ? `USD ${finalSetupPrice}` : 'USD 0';
+
+      // Las tarjetas superiores reflejan el precio final del plan para el mercado seleccionado.
+      const fixedMarketPricesForCards = { pro: { 'Otros': 599 }, corporate: { 'Otros': 799, 'Perú': 449 } };
+      ['base','starter','grow','pro','corporate'].forEach(k => {
+        const cardEl = document.getElementById(`card-price-${k}`);
+        if (!cardEl) return;
+        const preset = PLAN_PRESETS[k];
+        const special = fixedMarketPricesForCards[k] && fixedMarketPricesForCards[k][market];
+        const cardPrice = special || preset.target_price;
+        cardEl.innerText = `USD ${cardPrice}`;
+      });
+      const marginPercent = calc.margPct;
+      const implTime = PRICING.impl_time[ia] || '1 Día Hábil';
+
+      document.getElementById('impl-time-badge').innerText = implTime;
+      document.getElementById('margin-cost-val').innerText = `$${totalDirectCost.toFixed(2)} USD`;
+      document.getElementById('margin-partner-val').innerText = `$${calc.partAmt.toFixed(2)} USD (${partnerCommPercent}%)`;
+      document.getElementById('current-margin-val').innerText = `$${calc.netG.toFixed(2)} USD (${marginPercent < -900 ? '0.0' : marginPercent.toFixed(1)}%)`;
+
+      const statusBadge = document.getElementById('margin-status-badge');
+      const quoteMarginBlocked = marginPercent < 20 || finalMonthlyPrice <= 0;
+      const quoteMarginWarning = document.getElementById('quote-margin-warning');
+      if (quoteMarginWarning) quoteMarginWarning.classList.toggle('hidden', !quoteMarginBlocked || finalMonthlyPrice <= 0);
+
+      if (quoteMarginBlocked) {
+        statusBadge.innerText = "NO PERMITIDO";
+        statusBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30";
+        document.getElementById('current-margin-val').className = "font-bold text-red-400 font-mono";
+        document.getElementById('display-monthly-final').innerText = "NO PERMITIDO";
+        document.getElementById('display-setup-final').innerText = "NO PERMITIDO";
+        setActionButtonsEnabled(false);
+      } else {
+        statusBadge.innerText = "OK";
+        statusBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+        document.getElementById('current-margin-val').className = "font-bold text-emerald-400 font-mono";
+        document.getElementById('display-monthly-final').innerText = `$${finalMonthlyPrice} USD`;
+        document.getElementById('display-setup-final').innerText = `$${finalSetupPrice} USD`;
+        setActionButtonsEnabled(true);
+      }
+
+      document.getElementById('display-monthly-original').innerText = calc.totD > 0 ? `$${Math.floor(monthlyListPrice)}` : '';
+
+      let discLabelText = "";
+      if (calc.extraD > 0) {
+        discLabelText = `${calc.extraD.toFixed(1)}% Descuento Especial Aplicado`;
+      } else if (calc.baseD > 0) {
+        discLabelText = `Descuento incluido en el plan`;
+      }
+      document.getElementById('display-monthly-discount-text').innerText = discLabelText;
+
+      document.getElementById('display-setup-original').innerText = setupBonifPercent > 0 ? `$${Math.floor(setupListPrice)}` : '';
+      document.getElementById('display-setup-bonif-text').innerText = setupBonifPercent > 0 ? `${setupBonifPercent}% Bonificado` : '';
+
+      const validityDays = parseInt(document.getElementById('quote-validity-days').value) || 7;
+      const sellerName = document.getElementById('seller-name').value.trim();
+      const sellerEmail = document.getElementById('seller-email').value.trim();
+      const sellerPhone = document.getElementById('seller-phone').value.trim();
+
+      const sheetTools = intSheets > 0 ? getSheetToolSelections() : [];
+      const customIntegrationDetails = intCustom > 0 ? getCustomIntegrationDetails() : [];
+      const integrationDetails = [];
+      if (intEmail > 0) integrationDetails.push(`${intEmail} Envío Correo desde Asistente IA`);
+      sheetTools.forEach(tool => {
+        const toolLabel = tool.type === 'otra' ? (tool.purpose || 'Otra') : tool.name;
+        integrationDetails.push(`Google Sheets ${tool.index} — ${toolLabel}`);
+      });
+      if (intCalendar > 0) integrationDetails.push(`${intCalendar} Integración de Turnero con Google Calendar`);
+      if (intGeo > 0) integrationDetails.push(`${intGeo} Tool de Geolocalización`);
+      if (intTnPos > 0) integrationDetails.push('Tienda Nube Posventa');
+      if (tnProds > 0) integrationDetails.push(`Tienda Nube Catálogo (${tnProds} productos)`);
+      customIntegrationDetails.forEach((detail, idx) => {
+        integrationDetails.push(`Integración a Medida ${idx + 1}${detail ? ` — ${detail}` : ''}`);
+      });
+
+      const onboardingData = {
+        startDate: document.getElementById('alta-start-date').value,
+        billingEmail: document.getElementById('alta-billing-email').value.trim(),
+        legalName: document.getElementById('alta-legal-name').value.trim(),
+        taxId: document.getElementById('alta-tax-id').value.trim(),
+        country: document.getElementById('alta-country').value.trim(),
+        ivaCondition: document.getElementById('alta-iva-condition').value,
+        currency: document.getElementById('alta-currency').value,
+        partnerName: document.getElementById('alta-partner-name').value.trim(),
+        partnerEmail: document.getElementById('alta-partner-email').value.trim(),
+        implementationName: document.getElementById('alta-implementation-name').value.trim(),
+        implementationEmail: document.getElementById('alta-implementation-email').value.trim(),
+        setupPaid: document.getElementById('alta-setup-paid').checked,
+        generalComments: document.getElementById('alta-general-comments').value.trim()
+      };
+
+      window.lastQuoteData = {
+        quoteDate: new Date().toLocaleDateString('es-AR'),
+        clientCompany: document.getElementById('client-company').value.trim(),
+        clientContact: document.getElementById('client-contact').value.trim(),
+        clientEmail: document.getElementById('client-email').value.trim(),
+        clientPhone: document.getElementById('client-phone').value.trim(),
+        validityDays, market, note: document.getElementById('quote-note')?.value.trim() || '', customTerm: document.getElementById('quote-term-note')?.value.trim() || '', hasExtras: extrasMonthlyList > 0,
+        sellerName, sellerEmail, sellerPhone,
+        activePlanKey: activePlanKey, planName: currentPlanName, iaLevel: ia, implTime: implTime,
+        lic, channels: activeChannels, channelNamesFormatted,
+        channelDetails: channelDetailParts, stdChannels, stdChannelCount,
+        wppLines, totalTkts, wppTkts, stdTkts,
+        autos, intEmail, intSheets, intCalendar, intGeo, intTnPos, tnProds, intCustom,
+        sheetTools, customIntegrationDetails, integrationDetails,
+        isWppMkt, wppMktSends, plantillasMkt, plantillasUt, segHs,
+        capEquipoHs, capAdminHs, analisisItHs, configInicial, onboardingData,
+        monthlyList: monthlyListPrice, monthlyFinal: finalMonthlyPrice,
+        monthlyDisc: calc.totD, baseDisc: calc.baseD, extraDisc: calc.extraD,
+        setupList: setupListPrice, setupFinal: finalSetupPrice, setupBonif: setupBonifPercent, extrasList: extrasMonthlyList,
+        directCost: totalDirectCost, partnerCommAmt: calc.partAmt, partnerCommPct: partnerCommPercent,
+        netGain: calc.netG, marginPercent
+      };
+    }
+
+    function openClientProposalModal() {
+      recalculate();
+      const data = window.lastQuoteData;
+      if (!data || data.marginPercent < 20) return;
+
+      document.getElementById('prop-client-company').innerText = data.clientCompany || '';
+      document.getElementById('prop-client-contact').innerText = data.clientContact ? `Contacto: ${data.clientContact}` : '';
+      document.getElementById('prop-client-email').innerText = data.clientEmail ? `Email: ${data.clientEmail}` : '';
+      document.getElementById('prop-client-phone').innerText = data.clientPhone ? `Tel: ${data.clientPhone}` : '';
+
+      document.getElementById('prop-seller-name').innerText = data.sellerName;
+      document.getElementById('prop-seller-email').innerText = data.sellerEmail;
+      document.getElementById('prop-seller-phone').innerText = data.sellerPhone ? `Tel: ${data.sellerPhone}` : '';
+
+      document.getElementById('prop-date').innerText = `Fecha: ${new Date().toLocaleDateString()}`;
+      document.getElementById('prop-validity').innerText = `Validez: ${data.validityDays} Días`;
+
+      document.getElementById('prop-impl-time').innerText = data.implTime;
+
+      document.getElementById('prop-plan-header').innerText = `RESUMEN DE LA PROPUESTA: PLAN ${data.planName.toUpperCase()}${data.hasExtras ? ' + EXTRAS' : ''} | MERCADO ${data.market.toUpperCase()}`;
+
+      const noteBox = document.getElementById('prop-note-box');
+      const noteText = document.getElementById('prop-note-text');
+      noteText.innerText = data.note || '';
+      noteBox.classList.toggle('hidden', !data.note);
+      const customTermEl = document.getElementById('prop-custom-term');
+      customTermEl.innerText = data.customTerm || '';
+      customTermEl.classList.toggle('hidden', !data.customTerm);
+
+      document.getElementById('prop-monthly-price').innerText = `$${Math.floor(data.monthlyFinal)} USD`;
+      document.getElementById('prop-monthly-orig').innerText = data.monthlyDisc > 0 ? `$${Math.floor(data.monthlyList)} USD` : '';
+      
+      document.getElementById('prop-setup-price').innerText = `$${Math.floor(data.setupFinal)} USD`;
+      document.getElementById('prop-setup-orig').innerText = data.setupBonif > 0 ? `$${Math.floor(data.setupList)} USD` : '';
+
+      const baseBody = document.getElementById('prop-base-items-body');
+      baseBody.innerHTML = '';
+
+      const iaNames = { none: 'Sin Asistente IA', starter: 'Asistente IA Starter', grow: 'Asistente IA Grow', pro: 'Asistente IA Pro', corporate: 'Asistente IA Corporate' };
+      
+      baseBody.innerHTML += `<tr><td class="py-1 font-medium">Asistente Virtual</td><td class="py-1 text-right">${iaNames[data.iaLevel]}</td></tr>`;
+      baseBody.innerHTML += `<tr><td class="py-1 font-medium">Licencias de Agente / Usuario</td><td class="py-1 text-right">${data.lic} Licencias</td></tr>`;
+      
+      const formattedChannels = data.channelDetails && data.channelDetails.length ? data.channelDetails.join(', ') : 'Ninguno';
+      baseBody.innerHTML += `<tr><td class="py-1 font-medium">Canales</td><td class="py-1 text-right">${formattedChannels}</td></tr>`;
+
+      let convDetail = [];
+      if (data.stdTkts > 0) convDetail.push(`${data.stdTkts} estándar`);
+      if (data.wppTkts > 0) convDetail.push(`${data.wppTkts} WhatsApp API`);
+      baseBody.innerHTML += `<tr><td class="py-1 font-medium">Volumen Mensual de Conversaciones</td><td class="py-1 text-right">${data.totalTkts} conversaciones (${convDetail.join(' + ')})</td></tr>`;
+
+      if (data.autos > 0) {
+        baseBody.innerHTML += `<tr><td class="py-1 font-medium">Automatizaciones</td><td class="py-1 text-right">${data.autos} Flujos</td></tr>`;
+      }
+      if (data.intEmail > 0) {
+        baseBody.innerHTML += `<tr><td class="py-1 font-medium">Envío Correo desde Asistente IA</td><td class="py-1 text-right">${data.intEmail} Casillas</td></tr>`;
+      }
+      if (data.intSheets > 0) {
+        baseBody.innerHTML += `<tr><td class="py-1 font-medium">Integración Sheet / Excel Online</td><td class="py-1 text-right">${data.intSheets} Archivos</td></tr>`;
+      }
+      if (data.intSheets > 0 && data.sheetTools?.length) {
+        data.sheetTools.forEach(tool => {
+          const label = tool.type === 'otra' ? (tool.purpose || 'Otra') : tool.name;
+          baseBody.innerHTML += `<tr><td class="py-1 font-medium">Tool de Sheet ${tool.index}</td><td class="py-1 text-right">${label}</td></tr>`;
+        });
+      }
+      if (data.intCalendar > 0) {
+        baseBody.innerHTML += `<tr><td class="py-1 font-medium">Integración de Turnero con Google Calendar</td><td class="py-1 text-right">${data.intCalendar} Integración${data.intCalendar === 1 ? '' : 'es'}</td></tr>`;
+      }
+      if (data.intGeo > 0) {
+        baseBody.innerHTML += `<tr><td class="py-1 font-medium">Tool de Geolocalización</td><td class="py-1 text-right">${data.intGeo} Integración${data.intGeo === 1 ? '' : 'es'}</td></tr>`;
+      }
+      if (data.intTnPos > 0) {
+        baseBody.innerHTML += `<tr><td class="py-1 font-medium">Tienda Nube Posventa</td><td class="py-1 text-right">Módulo Activo</td></tr>`;
+      }
+      if (data.tnProds > 0) {
+        baseBody.innerHTML += `<tr><td class="py-1 font-medium">Tienda Nube Catálogo</td><td class="py-1 text-right">${data.tnProds} Productos</td></tr>`;
+      }
+      if (data.customIntegrationDetails?.length) {
+        data.customIntegrationDetails.forEach((detail, idx) => {
+          baseBody.innerHTML += `<tr><td class="py-1 font-medium">Integración a Medida ${idx + 1}</td><td class="py-1 text-right">${detail || 'Detalle pendiente'}</td></tr>`;
+        });
+      }
+      if (data.isWppMkt) {
+        baseBody.innerHTML += `<tr><td class="py-1 font-medium">Módulo WhatsApp Marketing</td><td class="py-1 text-right">${data.wppMktSends} Envíos mensuales</td></tr>`;
+      }
+      if (data.plantillasMkt > 0) {
+        baseBody.innerHTML += `<tr><td class="py-1 font-medium">Plantillas Mkt Adicionales</td><td class="py-1 text-right">${data.plantillasMkt} Unidades</td></tr>`;
+      }
+      if (data.plantillasUt > 0) {
+        baseBody.innerHTML += `<tr><td class="py-1 font-medium">Plantillas Utility Adicionales</td><td class="py-1 text-right">${data.plantillasUt} Unidades</td></tr>`;
+      }
+      if (data.segHs > 0) {
+        baseBody.innerHTML += `<tr><td class="py-1 font-medium">Seguimiento de Plataforma</td><td class="py-1 text-right">${data.segHs} hs/mes</td></tr>`;
+      }
+
+      const baseFeaturesBox = document.getElementById('prop-base-features-box');
+      const baseFeaturesList = document.getElementById('prop-base-features-list');
+      
+      baseFeaturesBox.style.display = 'none';
+
+      let setupDetails = [];
+      if (data.configInicial) setupDetails.push("Configuración Inicial del Sistema");
+      if (data.iaLevel !== 'none') setupDetails.push(`Armado y Entrenamiento de Asistente IA (${data.iaLevel.toUpperCase()})`);
+      if (data.capEquipoHs > 0) setupDetails.push(`Capacitación Equipo (${data.capEquipoHs} hs)`);
+      if (data.capAdminHs > 0) setupDetails.push(`Capacitación Administradores (${data.capAdminHs} hs)`);
+      if (data.analisisItHs > 0) setupDetails.push(`Análisis de IT (${data.analisisItHs} hs)`);
+
+      document.getElementById('prop-setup-items-text').innerText = setupDetails.length > 0 ? setupDetails.join(' • ') : "Setup Básico Incluido";
+
+      document.getElementById('client-modal').classList.remove('hidden');
+    }
+
+    function closeClientProposalModal() {
+      document.getElementById('client-modal').classList.add('hidden');
+    }
+
+    function setOnboardingPdfData(data) {
+      const d = data.onboardingData || {};
+      const fmtDate = value => {
+        if (!value) return 'No especificada';
+        const [y,m,day] = value.split('-');
+        return `${day}/${m}/${y}`;
+      };
+      const text = (id, value, fallback='') => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = value || fallback;
+      };
+
+      text('onb-pdf-date', `Fecha: ${data.quoteDate || new Date().toLocaleDateString('es-AR')}`);
+      text('onb-pdf-market', `Mercado: ${data.market || '-'}`);
+      text('onb-pdf-company', data.clientCompany, '');
+      text('onb-pdf-contact', data.clientContact, '');
+      text('onb-pdf-email', data.clientEmail, '');
+      text('onb-pdf-phone', data.clientPhone, '');
+      text('onb-pdf-seller', data.sellerName, '');
+      text('onb-pdf-seller-email', data.sellerEmail, '');
+      text('onb-pdf-seller-phone', data.sellerPhone ? `Tel: ${data.sellerPhone}` : '', '');
+      text('onb-pdf-plan-header', `PLAN ${data.planName.toUpperCase()}${data.hasExtras ? ' + EXTRAS' : ''} | MERCADO ${data.market.toUpperCase()}`);
+      text('onb-pdf-start-date', fmtDate(d.startDate));
+      text('onb-pdf-billing-email', d.billingEmail, 'No especificado');
+      text('onb-pdf-legal-name', d.legalName, 'No especificada');
+      text('onb-pdf-tax-id', d.taxId, 'No especificado');
+      text('onb-pdf-country', d.country, 'No especificado');
+      text('onb-pdf-iva', d.ivaCondition, 'No especificada');
+      text('onb-pdf-currency', d.currency, 'USD');
+
+      const partnerBlock = document.getElementById('onb-pdf-partner-block');
+      const showPartner = Number(data.partnerCommPct || 0) > 0;
+      if (partnerBlock) partnerBlock.classList.toggle('hidden', !showPartner);
+      if (showPartner) {
+        text('onb-pdf-partner-name', d.partnerName, '');
+        text('onb-pdf-partner-email', d.partnerEmail, '');
+      } else {
+        text('onb-pdf-partner-name', '', '');
+        text('onb-pdf-partner-email', '', '');
+      }
+
+      text('onb-pdf-implementation-name', d.implementationName, 'No especificado');
+      text('onb-pdf-implementation-email', d.implementationEmail, '');
+      text('onb-pdf-setup-paid', d.setupPaid ? 'PAGADO' : 'PENDIENTE');
+
+      const gcBox = document.getElementById('onb-pdf-general-comments-box');
+      text('onb-pdf-general-comments', d.generalComments, '');
+      if (gcBox) gcBox.classList.toggle('hidden', !d.generalComments);
+
+      const body = document.getElementById('onb-pdf-service-body');
+      body.innerHTML = '';
+      const iaNames = { none: 'Sin Asistente IA', starter: 'Asistente IA Starter', grow: 'Asistente IA Grow', pro: 'Asistente IA Pro', corporate: 'Asistente IA Corporate' };
+      const addRow = (name, value) => { body.innerHTML += `<tr><td class="py-1 font-medium">${name}</td><td class="py-1 text-right">${value}</td></tr>`; };
+      addRow('Asistente Virtual', iaNames[data.iaLevel] || 'Sin Asistente IA');
+      addRow('Licencias de Agente / Usuario', `${data.lic} Licencias`);
+      addRow('Canales', data.channelDetails?.length ? data.channelDetails.join(', ') : 'Ninguno');
+      const conv = [];
+      if (data.stdTkts > 0) conv.push(`${data.stdTkts} estándar`);
+      if (data.wppTkts > 0) conv.push(`${data.wppTkts} WhatsApp API`);
+      addRow('Volumen Mensual de Conversaciones', `${data.totalTkts} conversaciones${conv.length ? ` (${conv.join(' + ')})` : ''}`);
+      if (data.autos > 0) addRow('Automatizaciones', `${data.autos} Flujos`);
+      if (data.intEmail > 0) addRow('Envío Correo desde Asistente IA', `${data.intEmail} Casillas`);
+      if (data.sheetTools?.length) {
+        data.sheetTools.forEach(tool => {
+          const label = tool.type === 'otra' ? (tool.purpose || 'Otra') : tool.name;
+          addRow(`Google Sheets ${tool.index}`, label);
+        });
+      }
+      if (data.intCalendar > 0) addRow('Integración de Turnero con Google Calendar', `${data.intCalendar} Integración${data.intCalendar === 1 ? '' : 'es'}`);
+      if (data.intGeo > 0) addRow('Tool de Geolocalización', `${data.intGeo} Integración${data.intGeo === 1 ? '' : 'es'}`);
+      if (data.intTnPos > 0) addRow('Tienda Nube Posventa', 'Módulo Activo');
+      if (data.tnProds > 0) addRow('Tienda Nube Catálogo', `${data.tnProds} Productos`);
+      if (data.customIntegrationDetails?.length) {
+        data.customIntegrationDetails.forEach((detail, idx) => addRow(`Integración a Medida ${idx + 1}`, detail || 'Detalle pendiente'));
+      }
+      if (data.isWppMkt) addRow('WhatsApp Marketing', `${data.wppMktSends} envíos mensuales`);
+      if (data.plantillasMkt > 0) addRow('Plantillas MKT Adicionales', `${data.plantillasMkt} Unidades`);
+      if (data.plantillasUt > 0) addRow('Plantillas Utility Adicionales', `${data.plantillasUt} Unidades`);
+      if (data.segHs > 0) addRow('Seguimiento de Plataforma', `${data.segHs} hs/mes`);
+
+      const setupDetails = [];
+      if (data.configInicial) setupDetails.push('Configuración Inicial del Sistema');
+      if (data.iaLevel !== 'none') setupDetails.push(`Armado y Entrenamiento de Asistente IA (${data.iaLevel.toUpperCase()})`);
+      if (data.capEquipoHs > 0) setupDetails.push(`Capacitación Equipo (${data.capEquipoHs} hs)`);
+      if (data.capAdminHs > 0) setupDetails.push(`Capacitación Administradores (${data.capAdminHs} hs)`);
+      if (data.analisisItHs > 0) setupDetails.push(`Análisis de IT (${data.analisisItHs} hs)`);
+      text('onb-pdf-setup', setupDetails.length ? setupDetails.join(' • ') : 'Setup Básico Incluido');
+      text('onb-pdf-impl-time', data.implTime);
+      const commBox = document.getElementById('onb-pdf-commercial-comments-box');
+      text('onb-pdf-commercial-comments', data.note, '');
+      if (commBox) commBox.classList.toggle('hidden', !data.note);
+
+      const monthlyHasDiscount = Number(data.monthlyDisc || 0) > 0;
+      const setupHasDiscount = Number(data.setupBonif || 0) > 0;
+      text('onb-pdf-monthly-list', monthlyHasDiscount ? `USD ${Math.floor(data.monthlyList)}` : '', '');
+      text('onb-pdf-monthly-discount', monthlyHasDiscount ? `Descuento: ${Number(data.monthlyDisc).toFixed(1)}%` : '', '');
+      text('onb-pdf-monthly', `USD ${Math.floor(data.monthlyFinal)}`);
+      text('onb-pdf-setup-list', setupHasDiscount ? `USD ${Math.floor(data.setupList)}` : '', '');
+      text('onb-pdf-setup-discount', setupHasDiscount ? `Bonificación: ${Number(data.setupBonif).toFixed(0)}%` : '', '');
+      text('onb-pdf-setup-price', `USD ${Math.floor(data.setupFinal)}`);
+      text('onb-pdf-commission', `USD ${data.partnerCommAmt.toFixed(2)}`);
+    }
+
+    function openClientOnboardingPdfModal() {
+      recalculate();
+      const data = window.lastQuoteData;
+      if (!data || data.marginPercent < 20) return;
+      setOnboardingPdfData(data);
+      document.getElementById('onboarding-pdf-modal').classList.remove('hidden');
+    }
+
+    function closeClientOnboardingPdfModal() {
+      document.getElementById('onboarding-pdf-modal').classList.add('hidden');
+    }
+
+    function printClientOnboardingPdf() {
+      const data = window.lastQuoteData;
+      if (!data || data.marginPercent < 20) return;
+      setOnboardingPdfData(data);
+      const clientName = data.clientCompany || 'Cliente';
+      const today = new Date().toLocaleDateString().replace(/\//g, '-');
+      const originalTitle = document.title;
+      document.title = `Alta de Cliente - ${clientName} - ${today}`;
+      const modal = document.getElementById('onboarding-pdf-modal');
+      const element = document.getElementById('printable-onboarding');
+      modal.classList.add('print-active-modal');
+      element.classList.add('print-active');
+      const cleanup = () => {
+        element.classList.remove('print-active');
+        modal.classList.remove('print-active-modal');
+        document.title = originalTitle;
+        window.removeEventListener('afterprint', cleanup);
+      };
+      window.addEventListener('afterprint', cleanup);
+      window.print();
+      setTimeout(cleanup, 2500);
+    }
+
+    function printProposal() {
+      const data = window.lastQuoteData;
+      const clientName = data && data.clientCompany ? data.clientCompany : 'Cliente';
+      const today = new Date().toLocaleDateString().replace(/\//g, '-');
+      const originalTitle = document.title;
+      
+      document.title = `Cotización Botiax - ${clientName} - ${today}`;
+      
+      const modal = document.getElementById('client-modal');
+      const element = document.getElementById('printable-quote');
+      modal.classList.add('print-active-modal');
+      element.classList.add('print-active');
+      
+      const cleanup = () => {
+        element.classList.remove('print-active');
+        modal.classList.remove('print-active-modal');
+        document.title = originalTitle;
+        window.removeEventListener('afterprint', cleanup);
+      };
+      window.addEventListener('afterprint', cleanup);
+      window.print();
+      // Algunos navegadores móviles no disparan afterprint.
+      setTimeout(cleanup, 2500);
+    }
+
+    function printTechBreakdown() {
+      const data = window.lastQuoteData;
+      const clientName = data && data.clientCompany ? data.clientCompany : 'Cliente';
+      const today = new Date().toLocaleDateString().replace(/\//g, '-');
+      const originalTitle = document.title;
+      
+      document.title = `Desglose Financiero - ${clientName} - ${today}`;
+      
+      const modal = document.getElementById('tech-modal');
+      const element = document.getElementById('printable-tech');
+      modal.classList.add('print-active-modal');
+      element.classList.add('print-active');
+      
+      const cleanup = () => {
+        element.classList.remove('print-active');
+        modal.classList.remove('print-active-modal');
+        document.title = originalTitle;
+        window.removeEventListener('afterprint', cleanup);
+      };
+      window.addEventListener('afterprint', cleanup);
+      window.print();
+      // Algunos navegadores móviles no disparan afterprint.
+      setTimeout(cleanup, 2500);
+    }
+
+    function openTechBreakdownModal() {
+      recalculate();
+      const data = window.lastQuoteData;
+      if (!data) return;
+
+      const d = data.onboardingData || {};
+      const rate = MARKET_RATES[data.market] || MARKET_RATES['Argentina'];
+      const plan = PLAN_PRESETS[data.activePlanKey] || null;
+      const hasIa = data.iaLevel !== 'none';
+      const stdCostU = hasIa ? rate.stdIaCost : rate.stdNoIaCost;
+      const stdPriceU = hasIa ? rate.stdIaPrice : rate.stdNoIaPrice;
+      const wppCostU = hasIa ? rate.wppIaCost : rate.wppNoIaCost;
+      const wppPriceU = hasIa ? rate.wppIaPrice : rate.wppNoIaPrice;
+      const fmt = n => `$${Number(n || 0).toFixed(2)} USD`;
+      const pct = n => `${Number(n || 0).toFixed(1)}%`;
+
+      document.getElementById('tb-plan-title').innerText = `${data.planName} · IA ${data.iaLevel.toUpperCase()} · Mercado ${data.market}`;
+      document.getElementById('tb-client-company').innerText = data.clientCompany || 'No especificado';
+      document.getElementById('tb-client-contact').innerText = data.clientContact || 'No especificado';
+      document.getElementById('tb-client-email').innerText = data.clientEmail || 'Sin email';
+      document.getElementById('tb-client-phone').innerText = data.clientPhone || 'Sin teléfono';
+      document.getElementById('tb-seller-name').innerText = data.sellerName || 'No especificado';
+      document.getElementById('tb-quote-date').innerText = data.quoteDate || new Date().toLocaleDateString('es-AR');
+      document.getElementById('tb-quote-validity').innerText = `${data.validityDays} Días`;
+      document.getElementById('tb-partner-name').innerText = d.partnerName || '';
+      document.getElementById('tb-implementation-name').innerText = d.implementationName || 'No especificado';
+      document.getElementById('tb-setup-paid').innerText = d.setupPaid ? 'Pagado' : 'Pendiente';
+
+      document.getElementById('tb-monthly-list').innerText = fmt(data.monthlyList);
+      const monthlyDiscountAmount = Math.max(0, Number(data.monthlyList || 0) - Number(data.monthlyFinal || 0));
+      document.getElementById('tb-monthly-disc').innerText = `${fmt(monthlyDiscountAmount)} (${pct(data.monthlyDisc)})`;
+      document.getElementById('tb-monthly-final').innerText = fmt(data.monthlyFinal);
+      document.getElementById('tb-monthly-cost').innerText = fmt(data.directCost);
+      document.getElementById('tb-partner-comm').innerText = `${fmt(data.partnerCommAmt)} (${data.partnerCommPct}%)`;
+      document.getElementById('tb-monthly-gain').innerText = `${fmt(data.netGain)} (${pct(data.marginPercent)} Margen)`;
+      document.getElementById('tb-setup-list').innerText = fmt(data.setupList);
+      const setupDiscountAmount = Math.max(0, Number(data.setupList || 0) - Number(data.setupFinal || 0));
+      document.getElementById('tb-setup-bonif').innerText = `${fmt(setupDiscountAmount)} (${Number(data.setupBonif || 0).toFixed(0)}%)`;
+      document.getElementById('tb-setup-final').innerText = fmt(data.setupFinal);
+      document.getElementById('tb-impl-time').innerText = data.implTime;
+
+      const channelSummary = data.channelDetails?.length ? data.channelDetails.join(', ') : 'Ninguno';
+      const componentLines = [];
+      componentLines.push(`Asistente Virtual IA: ${data.iaLevel === 'none' ? 'Sin IA' : data.iaLevel.toUpperCase()}`);
+      componentLines.push(`Licencias: ${data.lic}`);
+      if (data.stdChannelCount > 0) componentLines.push(`Canales estándar: ${channelSummary} (${data.stdTkts} conversaciones)`);
+      if (data.wppLines > 0) componentLines.push(`Canal WhatsApp: ${data.wppLines} línea(s) (${data.wppTkts} conversaciones)`);
+      if (data.autos > 0) componentLines.push(`Automatizaciones: ${data.autos}`);
+      if (data.integrationDetails?.length) componentLines.push(`Integraciones: ${data.integrationDetails.join(' | ')}`);
+      if (data.isWppMkt) componentLines.push(`WhatsApp Marketing: ${data.wppMktSends} envíos/mes`);
+      if (data.plantillasMkt > 0) componentLines.push(`Plantillas MKT adicionales: ${data.plantillasMkt}`);
+      if (data.plantillasUt > 0) componentLines.push(`Plantillas Utility adicionales: ${data.plantillasUt}`);
+      if (data.segHs > 0) componentLines.push(`Seguimiento Plataforma: ${data.segHs} hs/mes`);
+      const summaryEl = document.getElementById('tb-components-summary');
+      if (summaryEl) summaryEl.innerText = componentLines.join('\n');
+
+      const tbody = document.getElementById('tb-cost-matrix-body');
+      tbody.innerHTML = '';
+      const planRows = [];
+      const extraRows = [];
+
+      const pushRow = (arr, name, qty, costU, priceU, role='extra') => {
+        const q = Number(qty || 0);
+        if (q <= 0) return;
+        arr.push({
+          name,
+          qty: q,
+          costU: Number(costU || 0),
+          priceU: Number(priceU || 0),
+          role
+        });
+      };
+
+      if (data.activePlanKey !== 'custom' && plan) {
+        // Componentes incluidos en el plan: todos quedan en la matriz, aunque su costo directo sea 0.
+        if (plan.ia !== 'none') {
+          pushRow(planRows, `Asistente Virtual IA ${String(plan.ia).toUpperCase()}`, 1, 0, PRICING.ia_level[plan.ia] || 0, 'plan');
+        }
+
+        const includedLic = Math.min(data.lic, plan.lic || 0);
+        pushRow(planRows, 'Licencias de Agente / Usuario', includedLic, 0, PRICING.licencia, 'plan');
+        const includedStdChannels = Math.min(data.stdChannelCount, plan.stdChannels || 0);
+        const stdChannelLabel = includedStdChannels > 0
+          ? `Canales Standard incluidos (${(data.channelDetails || []).slice(0, includedStdChannels).join(', ') || 'a elección'})`
+          : 'Canales Standard incluidos';
+        pushRow(planRows, stdChannelLabel, includedStdChannels, 0, 25, 'plan');
+
+        const includedStdTkts = Math.min(data.stdTkts, plan.stdTkts || 0);
+        pushRow(planRows, `Conversaciones Estándar incluidas (${data.market})`, includedStdTkts, stdCostU, stdPriceU, 'plan');
+
+        const includedWppLines = Math.min(data.wppLines, plan.wppLines || 0);
+        pushRow(planRows, 'Líneas WhatsApp incluidas', includedWppLines, 0, PRICING.canales.wpp, 'plan');
+        const includedWppTkts = Math.min(data.wppTkts, plan.wppTkts || 0);
+        pushRow(planRows, `Conversaciones WhatsApp API incluidas (${data.market})`, includedWppTkts, wppCostU, wppPriceU, 'plan');
+
+        pushRow(planRows, 'Automatizaciones incluidas', Math.min(data.autos, plan.auto || 0), 0, PRICING.auto_unit, 'plan');
+        pushRow(planRows, 'Envío Correo desde Asistente IA incluido', Math.min(data.intEmail, plan.int_correo || 0), 0, PRICING.int_correo, 'plan');
+
+        const includedSheets = Math.min(data.intSheets, plan.int_sheets || 0);
+        if (includedSheets > 0) {
+          const toolNames = Array.isArray(data.sheetTools) ? data.sheetTools.slice(0, includedSheets) : [];
+          if (toolNames.length === includedSheets) {
+            toolNames.forEach((tool, idx) => {
+              const label = tool.type === 'otra' ? (tool.purpose || 'Google Sheets / Excel Online') : (tool.name || 'Google Sheets / Excel Online');
+              pushRow(planRows, `Google Sheets ${idx + 1} — ${label}`, 1, 0, PRICING.int_sheets, 'plan');
+            });
+          } else {
+            pushRow(planRows, 'Google Sheets / Excel Online incluidos', includedSheets, 0, PRICING.int_sheets, 'plan');
+          }
+        }
+
+        if (plan.wpp_mkt && data.isWppMkt) {
+          const includedMkt = Math.min(data.wppMktSends, plan.wpp_mkt_sends || 0);
+          if (includedMkt > 0) {
+            const includedMktList = PRICING.wpp_mkt_base + Math.max(0, includedMkt - 100) * rate.plantillaMktPrice;
+            const includedMktCost = includedMkt * rate.plantillaMktCost;
+            pushRow(planRows, `WhatsApp Marketing incluido (${includedMkt} envíos)`, 1, includedMktCost, includedMktList, 'plan');
+          }
+        }
+
+        // Upgrade de IA, cuando corresponde.
+        const planIaPrice = PRICING.ia_level[plan.ia] || 0;
+        const currentIaPrice = PRICING.ia_level[data.iaLevel] || 0;
+        if (currentIaPrice > planIaPrice) {
+          pushRow(extraRows, `Upgrade de Asistente IA: ${plan.ia.toUpperCase()} → ${data.iaLevel.toUpperCase()}`, 1, 0, currentIaPrice - planIaPrice, 'extra');
+        }
+
+        pushRow(extraRows, 'Licencias adicionales', Math.max(0, data.lic - (plan.lic || 0)), 0, PRICING.licencia);
+        pushRow(extraRows, 'Canales Standard adicionales', Math.max(0, data.stdChannelCount - (plan.stdChannels || 0)), 0, 25);
+        pushRow(extraRows, 'Líneas WhatsApp adicionales', Math.max(0, data.wppLines - (plan.wppLines || 0)), 0, 25);
+        pushRow(extraRows, `Conversaciones Estándar Extra (${data.market})`, Math.max(0, data.stdTkts - (plan.stdTkts || 0)), stdCostU, stdPriceU);
+        pushRow(extraRows, `Conversaciones WhatsApp Extra (${data.market})`, Math.max(0, data.wppTkts - (plan.wppTkts || 0)), wppCostU, wppPriceU);
+        pushRow(extraRows, 'Automatizaciones adicionales', Math.max(0, data.autos - (plan.auto || 0)), 0, PRICING.auto_unit);
+        pushRow(extraRows, 'Envío Correo desde Asistente IA adicional', Math.max(0, data.intEmail - (plan.int_correo || 0)), 0, PRICING.int_correo);
+
+        const extraSheets = Math.max(0, data.intSheets - (plan.int_sheets || 0));
+        if (extraSheets > 0) {
+          const sheetNames = Array.isArray(data.sheetTools) ? data.sheetTools.slice(plan.int_sheets || 0) : [];
+          if (sheetNames.length === extraSheets) {
+            sheetNames.forEach((tool, idx) => {
+              const label = tool.type === 'otra' ? (tool.purpose || 'Google Sheets / Excel Online') : (tool.name || 'Google Sheets / Excel Online');
+              pushRow(extraRows, `Google Sheets ${idx + 1} — ${label}`, 1, 0, PRICING.int_sheets);
+            });
+          } else {
+            pushRow(extraRows, 'Google Sheets / Excel Online adicionales', extraSheets, 0, PRICING.int_sheets);
+          }
+        }
+
+        pushRow(extraRows, 'Integración de Turnero con Google Calendar', data.intCalendar, 0, PRICING.int_calendar);
+        pushRow(extraRows, 'Tool de Geolocalización', data.intGeo, 0, PRICING.int_geo);
+        pushRow(extraRows, 'Tienda Nube Posventa', Math.max(0, data.intTnPos - (plan.int_tn_posventa ? 1 : 0)), 0, PRICING.int_tn_posventa);
+        pushRow(extraRows, 'Tienda Nube Catálogo', data.tnProds, 0, data.tnProds > 0 ? calcTiendaNubeCatPrice(data.tnProds) / data.tnProds : 0);
+        if (Array.isArray(data.customIntegrationDetails) && data.customIntegrationDetails.length) {
+          data.customIntegrationDetails.forEach((detail, idx) => pushRow(extraRows, `Integración a Medida ${idx + 1}${detail ? ` — ${detail}` : ''}`, 1, 0, PRICING.int_custom));
+        }
+
+        if (data.isWppMkt && !plan.wpp_mkt) {
+          const baseSends = Math.min(data.wppMktSends, 100);
+          pushRow(extraRows, 'Módulo WhatsApp Marketing', 1, baseSends * rate.plantillaMktCost, PRICING.wpp_mkt_base);
+        }
+        const includedPlanMktSends = plan.wpp_mkt ? (plan.wpp_mkt_sends || 0) : 0;
+        if (data.isWppMkt && data.wppMktSends > includedPlanMktSends) {
+          pushRow(extraRows, 'Envíos WPP Mkt Extra', data.wppMktSends - includedPlanMktSends, rate.plantillaMktCost, rate.plantillaMktPrice);
+        }
+        pushRow(extraRows, 'Plantillas MKT Adicionales', data.plantillasMkt, rate.plantillaMktCost, rate.plantillaMktPrice);
+        pushRow(extraRows, 'Plantillas Utility Adicionales', data.plantillasUt, rate.plantillaUtCost, rate.plantillaUtPrice);
+        pushRow(extraRows, 'Seguimiento de Plataforma', data.segHs, 0, PRICING.seguimiento_hs);
+
+      } else {
+        // Personalizado: cada componente cotizado aparece, aunque tenga costo directo 0.
+        pushRow(extraRows, 'Asistente Virtual IA', data.iaLevel === 'none' ? 0 : 1, 0, PRICING.ia_level[data.iaLevel] || 0);
+        pushRow(extraRows, 'Licencias de Agente / Usuario', data.lic, 0, PRICING.licencia);
+        pushRow(extraRows, 'Canales Standard', data.stdChannelCount, 0, 25);
+        pushRow(extraRows, `Conversaciones Estándar (${data.market})`, data.stdTkts, stdCostU, stdPriceU);
+        pushRow(extraRows, 'Líneas WhatsApp', data.wppLines, 0, 25);
+        pushRow(extraRows, `Conversaciones WhatsApp API (${data.market})`, data.wppTkts, wppCostU, wppPriceU);
+        pushRow(extraRows, 'Automatizaciones', data.autos, 0, PRICING.auto_unit);
+        pushRow(extraRows, 'Envío Correo desde Asistente IA', data.intEmail, 0, PRICING.int_correo);
+
+        if (Array.isArray(data.sheetTools) && data.sheetTools.length) {
+          data.sheetTools.forEach((tool, idx) => {
+            const label = tool.type === 'otra' ? (tool.purpose || 'Google Sheets / Excel Online') : (tool.name || 'Google Sheets / Excel Online');
+            pushRow(extraRows, `Google Sheets ${idx + 1} — ${label}`, 1, 0, PRICING.int_sheets);
+          });
+        } else {
+          pushRow(extraRows, 'Integraciones Google Sheets / Excel Online', data.intSheets, 0, PRICING.int_sheets);
+        }
+
+        pushRow(extraRows, 'Integración de Turnero con Google Calendar', data.intCalendar, 0, PRICING.int_calendar);
+        pushRow(extraRows, 'Tool de Geolocalización', data.intGeo, 0, PRICING.int_geo);
+        pushRow(extraRows, 'Tienda Nube Posventa', data.intTnPos, 0, PRICING.int_tn_posventa);
+        pushRow(extraRows, 'Tienda Nube Catálogo', data.tnProds, 0, data.tnProds > 0 ? calcTiendaNubeCatPrice(data.tnProds) / data.tnProds : 0);
+        if (Array.isArray(data.customIntegrationDetails) && data.customIntegrationDetails.length) {
+          data.customIntegrationDetails.forEach((detail, idx) => pushRow(extraRows, `Integración a Medida ${idx + 1}${detail ? ` — ${detail}` : ''}`, 1, 0, PRICING.int_custom));
+        }
+        if (data.isWppMkt) {
+          pushRow(extraRows, 'Módulo WhatsApp Marketing', 1, Math.min(data.wppMktSends, 100) * rate.plantillaMktCost, PRICING.wpp_mkt_base);
+          if (data.wppMktSends > 100) pushRow(extraRows, 'Envíos WPP Mkt Extra', data.wppMktSends - 100, rate.plantillaMktCost, rate.plantillaMktPrice);
+        }
+        pushRow(extraRows, 'Plantillas MKT Adicionales', data.plantillasMkt, rate.plantillaMktCost, rate.plantillaMktPrice);
+        pushRow(extraRows, 'Plantillas Utility Adicionales', data.plantillasUt, rate.plantillaUtCost, rate.plantillaUtPrice);
+        pushRow(extraRows, 'Seguimiento de Plataforma', data.segHs, 0, PRICING.seguimiento_hs);
+      }
+
+      // La matriz usa el precio comercial standalone de cada componente como referencia.
+      // El descuento interno del plan NO se reparte artificialmente entre componentes:
+      // se aplica al bundle completo en el resumen financiero. El descuento especial,
+      // en cambio, sí se refleja sobre el precio de referencia de cada componente.
+      const allRows = [];
+      planRows.forEach(r => allRows.push({
+        ...r,
+        factor: (1 - (data.extraDisc || 0) / 100)
+      }));
+      extraRows.forEach(r => allRows.push({
+        ...r,
+        factor: (1 - (data.extraDisc || 0) / 100)
+      }));
+
+      const rawDiscounted = allRows.map(i => ({
+        ...i,
+        listTotal: i.qty * i.priceU,
+        discounted: i.qty * i.priceU * i.factor
+      }));
+
+      rawDiscounted.forEach(i => {
+        const costTot = i.qty * i.costU;
+        const priceDiscTot = i.discounted;
+        // Asignamos la comisión proporcionalmente al precio cobrado de cada componente
+        // para que este margen sea comparable con el margen neto global de la cotización.
+        const allocatedCommission = priceDiscTot * (Number(data.partnerCommPct || 0) / 100);
+        const netComponentGain = priceDiscTot - costTot - allocatedCommission;
+        const margin = priceDiscTot > 0 ? (netComponentGain / priceDiscTot) * 100 : (costTot === 0 ? 100 : -100);
+        tbody.innerHTML += `
+          <tr>
+            <td class="p-2 font-medium">${i.name}</td>
+            <td class="p-2 text-center font-mono">${i.qty}</td>
+            <td class="p-2 text-right font-mono">$${i.costU.toFixed(4)}</td>
+            <td class="p-2 text-right font-mono text-red-400">$${costTot.toFixed(2)}</td>
+            <td class="p-2 text-right font-mono">$${i.priceU.toFixed(4)}</td>
+            <td class="p-2 text-right font-mono text-amber-500">$${i.listTotal.toFixed(2)}</td>
+            <td class="p-2 text-right font-mono text-white">$${priceDiscTot.toFixed(2)}</td>
+            <td class="p-2 text-center font-mono font-bold ${margin < 20 ? 'text-red-400' : 'text-emerald-400'}">${margin.toFixed(1)}%</td>
+          </tr>`;
+      });
+
+      if (!rawDiscounted.length) {
+        tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">No hay componentes mensuales para mostrar.</td></tr>';
+      }
+
+      const setupSummary = [];
+      if (data.configInicial) setupSummary.push(`Configuración Inicial (${PRICING.config_inicial} USD)`);
+      if (hasIa) setupSummary.push(`Entrenamiento IA ${data.iaLevel.toUpperCase()} (${PRICING.ia_setup[data.iaLevel]} USD)`);
+      if (data.capEquipoHs > 0) setupSummary.push(`Capacitación Equipo (${data.capEquipoHs} hs)`);
+      if (data.capAdminHs > 0) setupSummary.push(`Capacitación Admin (${data.capAdminHs} hs)`);
+      if (data.analisisItHs > 0) setupSummary.push(`Análisis de IT (${data.analisisItHs} hs)`);
+      document.getElementById('tb-setup-list').title = setupSummary.join(' · ');
+
+      document.getElementById('tech-modal').classList.remove('hidden');
+    }
+
+    function closeTechBreakdownModal() {
+      document.getElementById('tech-modal').classList.add('hidden');
+    }
+
+    function copyQuickSummary() {
+      recalculate();
+      const data = window.lastQuoteData;
+      if (!data || data.marginPercent < 20) return;
+
+      const iaNames = { none: 'Sin IA', starter: 'Starter', grow: 'Grow', pro: 'Pro', corporate: 'Corporate' };
+
+      let summaryText = `*PROPUESTA COMERCIAL*\n`;
+      summaryText += `----------------------------------------\n`;
+      if (data.clientCompany) summaryText += `*Empresa:* ${data.clientCompany}\n`;
+      if (data.clientContact) summaryText += `*Contacto:* ${data.clientContact}\n`;
+      summaryText += `*Plan Seleccionado:* ${data.planName}\n`;
+      summaryText += `*Mercado Destino:* ${data.market}\n\n`;
+
+      summaryText += `*DETALLE DEL SERVICIO:*\n`;
+      summaryText += `• Asistente Virtual: ${iaNames[data.iaLevel] || 'Sin IA'}\n`;
+      summaryText += `• Licencias de Agente: ${data.lic}\n`;
+
+      if (data.channelDetails && data.channelDetails.length) {
+        summaryText += `• Canales: ${data.channelDetails.join(', ')}\n`;
+      }
+
+      summaryText += `• Conversaciones Totales: ${data.totalTkts}/mes\n`;
+      if (data.stdTkts > 0) summaryText += `   - Bolsa estándar compartida: ${data.stdTkts}\n`;
+      if (data.wppTkts > 0) summaryText += `   - WhatsApp API: ${data.wppTkts}\n`;
+
+      if (data.autos > 0) summaryText += `• Automatizaciones: ${data.autos} flujos\n`;
+
+      let integrationsList = [];
+      if (data.intEmail > 0) integrationsList.push(`${data.intEmail} Email`);
+      if (data.intSheets > 0 && data.sheetTools?.length) data.sheetTools.forEach(tool => {
+        const label = tool.type === 'otra' ? (tool.purpose || 'Otra') : tool.name;
+        integrationsList.push(`Google Sheets ${tool.index} — ${label}`);
+      });
+      if (data.intCalendar > 0) integrationsList.push(`${data.intCalendar} Integración de Turnero con Google Calendar`);
+      if (data.intGeo > 0) integrationsList.push(`${data.intGeo} Tool de Geolocalización`);
+      if (data.intTnPos > 0) integrationsList.push(`Tienda Nube Posventa`);
+      if (data.tnProds > 0) integrationsList.push(`Tienda Nube Catálogo (${data.tnProds} prods)`);
+      if (data.customIntegrationDetails?.length) {
+        data.customIntegrationDetails.forEach((detail, idx) => integrationsList.push(`A Medida ${idx + 1}${detail ? ` — ${detail}` : ''}`));
+      }
+      if (integrationsList.length > 0) summaryText += `• Integraciones: ${integrationsList.join(', ')}\n`;
+
+      if (data.isWppMkt) summaryText += `• WhatsApp MKT: ${data.wppMktSends} envíos/mes\n`;
+      if (data.plantillasMkt > 0) summaryText += `• Plantillas MKT Extra: ${data.plantillasMkt} u.\n`;
+      if (data.plantillasUt > 0) summaryText += `• Plantillas Utility Extra: ${data.plantillasUt} u.\n`;
+      if (data.segHs > 0) summaryText += `• Seguimiento Plataforma: ${data.segHs} hs/mes\n`;
+
+      let setupItems = [];
+      if (data.configInicial) setupItems.push("Config. Inicial");
+      if (data.iaLevel !== 'none') setupItems.push(`Entrenamiento IA (${data.iaLevel.toUpperCase()})`);
+      if (data.capEquipoHs > 0) setupItems.push(`Capacitación Equipo (${data.capEquipoHs} hs)`);
+      if (data.capAdminHs > 0) setupItems.push(`Capacitación Admin (${data.capAdminHs} hs)`);
+      if (data.analisisItHs > 0) setupItems.push(`Análisis de IT (${data.analisisItHs} hs)`);
+
+      summaryText += `\n*SETUP E IMPLEMENTACIÓN:*\n`;
+      summaryText += `• Componentes: ${setupItems.length > 0 ? setupItems.join(' • ') : 'Setup estándar'}\n`;
+      summaryText += `• Tiempo de Implementación: ${data.implTime}\n`;
+
+      if (data.note) summaryText += `\n*COMENTARIOS:*\n${data.note}\n`;
+
+      summaryText += `\n*INVERSIÓN:*\n`;
+      summaryText += `• *Inversión Mensual:* $${Math.floor(data.monthlyFinal)} USD`;
+      if (data.monthlyDisc > 0) summaryText += ` _(${data.monthlyDisc.toFixed(1)}% desc. total aplicado)_`;
+      summaryText += `\n`;
+      summaryText += `• *Setup Inicial (Pago Único):* $${Math.floor(data.setupFinal)} USD`;
+      if (data.setupBonif > 0) summaryText += ` _(${data.setupBonif}% bonificado)_`;
+      summaryText += `\n\n----------------------------------------\n`;
+      summaryText += `*Validez de la oferta:* ${data.validityDays} días\n`;
+      summaryText += `*Asesor Comercial:* ${data.sellerName} (${data.sellerEmail})`;
+      if (data.sellerPhone) summaryText += ` | Tel: ${data.sellerPhone}`;
+
+      navigator.clipboard.writeText(summaryText).then(() => {
+        alert("Resumen detallado de cotización copiado al portapapeles para WhatsApp.");
+      }).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = summaryText;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        alert("Resumen detallado de cotización copiado al portapapeles para WhatsApp.");
+      });
+    }
+
+    function copyClientOnboarding() {
+      recalculate();
+      const data = window.lastQuoteData;
+      if (!data || data.marginPercent < 20) return;
+
+      const fmtDate = value => {
+        if (!value) return 'No especificada';
+        const [y,m,d] = value.split('-');
+        return `${d}/${m}/${y}`;
+      };
+      const iaNames = { none: 'Sin IA', starter: 'Starter', grow: 'Grow', pro: 'Pro', corporate: 'Corporate' };
+      const lines = [];
+      lines.push('ALTA DE CLIENTE — BOTIAX');
+      lines.push('========================================');
+      if (data.clientCompany) lines.push(`Empresa: ${data.clientCompany}`);
+      if (data.clientContact) lines.push(`Contacto: ${data.clientContact}`);
+      if (data.clientEmail) lines.push(`Email de contacto: ${data.clientEmail}`);
+      if (data.clientPhone) lines.push(`Teléfono de contacto: ${data.clientPhone}`);
+      lines.push('');
+      lines.push('DATOS COMERCIALES');
+      lines.push(`Comercial: ${data.sellerName || 'No especificado'}`);
+      lines.push(`Email comercial: ${data.sellerEmail || 'No especificado'}`);
+      lines.push(`Teléfono comercial: ${data.sellerPhone || 'No especificado'}`);
+      lines.push(`Fecha de cotización: ${data.quoteDate || new Date().toLocaleDateString('es-AR')}`);
+      lines.push(`Validez de la oferta: ${data.validityDays} días`);
+      lines.push(`Plan: ${data.planName}`);
+      lines.push(`Mercado destino: ${data.market}`);
+      lines.push('');
+      lines.push('DATOS PARA EL ALTA');
+      lines.push(`Fecha de inicio estimada: ${fmtDate(data.onboardingData.startDate)}`);
+      lines.push(`Mail para facturación: ${data.onboardingData.billingEmail || 'No especificado'}`);
+      lines.push(`Razón social: ${data.onboardingData.legalName || 'No especificada'}`);
+      lines.push(`CUIT / RUT: ${data.onboardingData.taxId || 'No especificado'}`);
+      lines.push(`País: ${data.onboardingData.country || 'No especificado'}`);
+      lines.push(`Condición frente al IVA: ${data.onboardingData.ivaCondition || 'No especificada'}`);
+      lines.push(`Moneda de cobro: ${data.onboardingData.currency || 'USD'}`);
+      if (Number(data.partnerCommPct || 0) > 0) {
+        if (data.onboardingData.partnerName) lines.push(`Partner: ${data.onboardingData.partnerName}`);
+        if (data.onboardingData.partnerEmail) lines.push(`Email del Partner: ${data.onboardingData.partnerEmail}`);
+        lines.push(`Comisión Partner: USD ${data.partnerCommAmt.toFixed(2)} (${data.partnerCommPct}%)`);
+      }
+      lines.push(`Responsable de Implementación: ${data.onboardingData.implementationName || 'No especificado'}`);
+      lines.push(`Email del Responsable: ${data.onboardingData.implementationEmail || 'No especificado'}`);
+      lines.push(`Ya pagó setup: ${data.onboardingData.setupPaid ? 'Sí' : 'No'}`);
+      lines.push(`Comentarios generales: ${data.onboardingData.generalComments || 'Sin comentarios'}`);
+      lines.push('');
+      lines.push('DETALLE DEL SERVICIO');
+      lines.push(`Asistente Virtual: ${iaNames[data.iaLevel] || 'Sin IA'}`);
+      lines.push(`Licencias de Agente / Usuario: ${data.lic}`);
+      lines.push(`Canales: ${data.channelDetails && data.channelDetails.length ? data.channelDetails.join(', ') : 'Ninguno'}`);
+      lines.push(`Conversaciones Totales: ${data.totalTkts}/mes`);
+      if (data.stdTkts > 0) lines.push(`- Bolsa estándar compartida: ${data.stdTkts}`);
+      if (data.wppTkts > 0) lines.push(`- WhatsApp API: ${data.wppTkts}`);
+      if (data.autos > 0) lines.push(`Automatizaciones: ${data.autos} flujos`);
+      if (data.integrationDetails && data.integrationDetails.length) {
+        lines.push('Integraciones:');
+        data.integrationDetails.forEach(item => lines.push(`- ${item}`));
+      }
+      if (data.isWppMkt) lines.push(`WhatsApp Marketing: ${data.wppMktSends} envíos/mes`);
+      if (data.plantillasMkt > 0) lines.push(`Plantillas MKT adicionales: ${data.plantillasMkt}`);
+      if (data.plantillasUt > 0) lines.push(`Plantillas Utility adicionales: ${data.plantillasUt}`);
+      if (data.segHs > 0) lines.push(`Seguimiento de Plataforma: ${data.segHs} hs/mes`);
+      lines.push('');
+      lines.push('SETUP E IMPLEMENTACIÓN');
+      if (data.configInicial) lines.push('- Configuración Inicial del Sistema');
+      if (data.iaLevel !== 'none') lines.push(`- Armado y Entrenamiento de Asistente IA (${data.iaLevel.toUpperCase()})`);
+      if (data.capEquipoHs > 0) lines.push(`- Capacitación Equipo (${data.capEquipoHs} hs)`);
+      if (data.capAdminHs > 0) lines.push(`- Capacitación Administradores (${data.capAdminHs} hs)`);
+      if (data.analisisItHs > 0) lines.push(`- Análisis de IT (${data.analisisItHs} hs)`);
+      if (!data.configInicial && data.iaLevel === 'none' && data.capEquipoHs === 0 && data.capAdminHs === 0 && data.analisisItHs === 0) lines.push('- Setup estándar');
+      lines.push(`- Tiempo estimado de implementación: ${data.implTime}`);
+      if (data.note) {
+        lines.push('');
+        lines.push('COMENTARIOS');
+        lines.push(data.note);
+      }
+      lines.push('');
+      lines.push('INVERSIÓN');
+      lines.push(`Precio mensual con descuento: USD ${Math.floor(data.monthlyFinal)}`);
+      lines.push(`Setup: USD ${Math.floor(data.setupFinal)}`);
+      lines.push('');
+      lines.push('========================================');
+      const altaText = lines.join('\n');
+      navigator.clipboard.writeText(altaText).then(() => {
+        alert('Texto para alta de cliente copiado al portapapeles para enviar por correo.');
+      }).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = altaText;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        ta.remove();
+        alert('Texto para alta de cliente copiado al portapapeles para enviar por correo.');
+      });
+    }
+
+    function enhanceNumberInputs() {
+      const ids = [
+        'qty-licencias','qty-chan-webchat','qty-chan-ig','qty-chan-fb','qty-chan-email','qty-chan-api','qty-chan-wpp',
+        'qty-auto','qty-int-email','qty-int-sheets','qty-int-calendar','qty-int-geo','qty-int-tn-posventa','qty-tn-prods','qty-int-custom',
+        'qty-cap-equipo','qty-cap-admin','qty-analisis-it','qty-plantillas-mkt','qty-plantillas-ut','qty-wpp-mkt-sends'
+      ];
+      ids.forEach(id => {
+        const input = document.getElementById(id);
+        if (!input || input.closest('.number-stepper')) return;
+        const wrap = document.createElement('div');
+        wrap.className = 'number-stepper';
+        input.parentNode.insertBefore(wrap, input);
+        wrap.appendChild(input);
+        const controls = document.createElement('div');
+        controls.className = 'number-stepper-controls';
+        const up = document.createElement('button');
+        up.type = 'button'; up.title = 'Aumentar'; up.innerHTML = '▲';
+        const down = document.createElement('button');
+        down.type = 'button'; down.title = 'Disminuir'; down.innerHTML = '▼';
+        const step = () => parseFloat(input.step || '1') || 1;
+        const min = () => input.min === '' ? -Infinity : parseFloat(input.min);
+        const max = () => input.max === '' ? Infinity : parseFloat(input.max);
+        const change = delta => {
+          let v = parseFloat(input.value) || 0;
+          v = Math.min(max(), Math.max(min(), v + delta * step()));
+          input.value = String(v);
+          input.dispatchEvent(new Event('input', {bubbles:true}));
+          input.dispatchEvent(new Event('change', {bubbles:true}));
+        };
+        up.onclick = () => change(1); down.onclick = () => change(-1);
+        controls.append(up, down); wrap.appendChild(controls);
+      });
+    }
+
+    function syncStepperDisabledState() {
+      const wppModule = document.getElementById('chk-wpp-mkt');
+      const sends = document.getElementById('qty-wpp-mkt-sends');
+      if (wppModule && sends) {
+        const wrap = sends.closest('.number-stepper');
+        const disabled = !wppModule.checked || wppModule.disabled;
+        sends.disabled = disabled;
+        if (wrap) wrap.classList.toggle('disabled-stepper', disabled);
+      }
+    }
+
+    function initializeCalculatorUI() {
+      enhanceNumberInputs();
+      syncStepperDisabledState();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeCalculatorUI();
+      applyPlan('custom');
+      onSellerPresetChange();
+      syncWppMarketingVisual();
+      syncIntegrationDetailVisibility();
+      initializeCalculatorUI();
+    });
+
+    window.addEventListener('load', () => {
+      initializeCalculatorUI();
+      syncIntegrationDetailVisibility();
+      syncStepperDisabledState();
+    });
+  </script>
+</body>
+</html>
